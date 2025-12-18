@@ -13,7 +13,7 @@ import os
 app = Flask(__name__)
 
 # Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:raihan123@localhost/camping_booking_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/camping_booking_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = 'mysecret'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=7)
@@ -243,7 +243,7 @@ def get_profile():
 # ============================================
 
 @app.route('/api/campsites', methods=['GET'])
-@jwt_required()
+@jwt_required(optional=True)
 def get_campsites():
     try:
         campsites = Campsite.query.filter_by(is_active=True).all()

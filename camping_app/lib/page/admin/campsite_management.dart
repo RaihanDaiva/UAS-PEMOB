@@ -1,28 +1,54 @@
 import 'package:flutter/material.dart';
+import '../../services/storage_services.dart'; // your provided storage helper
+import '../../models/campsite.dart';
+import '../../services/api_admin_services.dart';
 
 class CampsiteManagementScreen extends StatefulWidget {
   final VoidCallback onBack;
-  const CampsiteManagementScreen({Key? key, required this.onBack}) : super(key: key);
+  const CampsiteManagementScreen({Key? key, required this.onBack})
+    : super(key: key);
 
   @override
-  State<CampsiteManagementScreen> createState() => _CampsiteManagementScreenState();
+  State<CampsiteManagementScreen> createState() =>
+      _CampsiteManagementScreenState();
 }
 
 class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
+  // Form.. type shit
+  final _formKey = GlobalKey<FormState>();
+
   bool showAddForm = false;
-  final _nameController = TextEditingController();
-  final _locationController = TextEditingController();
-  final _priceController = TextEditingController();
-  final _capacityController = TextEditingController();
-  final _descriptionController = TextEditingController();
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
+  final TextEditingController locationController = TextEditingController();
+  final TextEditingController latitudeController = TextEditingController();
+  final TextEditingController longitudeController = TextEditingController();
+  final TextEditingController capacityController = TextEditingController();
+  final TextEditingController priceController = TextEditingController();
+  final TextEditingController facilitiesController = TextEditingController();
+  final TextEditingController imageUrlController = TextEditingController();
+
+  // Service Variable
+  late Future<List<Campsite>> _campsitesFuture;
+  final ApiService _apiService = ApiService();
+
+  @override
+  void initState() {
+    super.initState();
+    _campsitesFuture = _apiService.getCampsites();
+  }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _locationController.dispose();
-    _priceController.dispose();
-    _capacityController.dispose();
-    _descriptionController.dispose();
+    nameController.dispose();
+    descriptionController.dispose();
+    locationController.dispose();
+    latitudeController.dispose();
+    longitudeController.dispose();
+    capacityController.dispose();
+    priceController.dispose();
+    facilitiesController.dispose();
+    imageUrlController.dispose();
     super.dispose();
   }
 
@@ -85,10 +111,31 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
 
               // Campsites List
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(24),
-                  itemCount: campsites.length,
-                  itemBuilder: (context, index) => _buildCampsiteCard(campsites[index]),
+                child: FutureBuilder<List<Campsite>>(
+                  future: _campsitesFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    }
+
+                    final campsites = snapshot.data!;
+
+                    if (campsites.isEmpty) {
+                      return const Center(
+                        child: Text('No campsites available'),
+                      );
+                    }
+
+                    return ListView.builder(
+                      itemCount: campsites.length,
+                      itemBuilder: (context, index) =>
+                          _buildCampsiteCard(campsites[index]),
+                    );
+                  },
                 ),
               ),
             ],
@@ -101,8 +148,8 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
     );
   }
 
-  Widget _buildCampsiteCard(Map<String, dynamic> campsite) {
-    final isActive = campsite['status'] == 'active';
+  Widget _buildCampsiteCard(Campsite campsite) {
+    final bool isActive = campsite.isActive;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -110,10 +157,7 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8),
         ],
       ),
       child: Padding(
@@ -124,25 +168,34 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
             // Image
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                campsite['image'],
-                width: 96,
-                height: 96,
-                fit: BoxFit.cover,
-              ),
+              child: campsite.imageUrl != null
+                  ? Image.network(
+                      campsite.imageUrl!,
+                      width: 96,
+                      height: 96,
+                      fit: BoxFit.cover,
+                    )
+                  : Container(
+                      width: 96,
+                      height: 96,
+                      color: const Color(0xFFF3F4F6),
+                      child: const Icon(Icons.image_not_supported),
+                    ),
             ),
             const SizedBox(width: 16),
+
             // Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Name + Status
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
                         child: Text(
-                          campsite['name'],
+                          campsite.name,
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -173,7 +226,10 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                       ),
                     ],
                   ),
+
                   const SizedBox(height: 4),
+
+                  // Location
                   Row(
                     children: [
                       const Icon(
@@ -184,7 +240,7 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          campsite['location'],
+                          campsite.locationName,
                           style: const TextStyle(
                             fontSize: 14,
                             color: Color(0xFF6B7280),
@@ -194,7 +250,10 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                       ),
                     ],
                   ),
+
                   const SizedBox(height: 8),
+
+                  // Rating (static / optional)
                   Row(
                     children: [
                       const Icon(
@@ -203,21 +262,18 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                         color: Color(0xFFFBBF24),
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        '${campsite['rating']}',
-                        style: const TextStyle(fontSize: 14),
-                      ),
+                      const Text('4.5', style: TextStyle(fontSize: 14)),
                       const SizedBox(width: 4),
-                      Text(
-                        '(${campsite['reviews']})',
-                        style: const TextStyle(
+                      const Text(
+                        '(120)',
+                        style: TextStyle(
                           fontSize: 12,
                           color: Color(0xFF6B7280),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        'Capacity: ${campsite['capacity']}',
+                        'Capacity: ${campsite.capacity}',
                         style: const TextStyle(
                           fontSize: 14,
                           color: Color(0xFF6B7280),
@@ -225,12 +281,15 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                       ),
                     ],
                   ),
+
                   const SizedBox(height: 12),
+
+                  // Price + Actions
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Rp ${_formatPrice(campsite['price'])}',
+                        campsite.formattedPrice,
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -250,7 +309,9 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                                 size: 16,
                                 color: Color(0xFF2563EB),
                               ),
-                              onPressed: () {},
+                              onPressed: () {
+                                // Edit logic
+                              },
                               padding: const EdgeInsets.all(8),
                               constraints: const BoxConstraints(),
                             ),
@@ -267,7 +328,9 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                                 size: 16,
                                 color: Color(0xFFDC2626),
                               ),
-                              onPressed: () {},
+                              onPressed: () {
+                                // Delete logic
+                              },
                               padding: const EdgeInsets.all(8),
                               constraints: const BoxConstraints(),
                             ),
@@ -327,53 +390,85 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
 
               // Form
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildTextField(
-                        controller: _nameController,
-                        label: 'Campsite Name',
-                        hint: 'Enter campsite name',
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTextField(
-                        controller: _locationController,
-                        label: 'Location',
-                        hint: 'Enter location',
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildTextField(
-                              controller: _priceController,
-                              label: 'Price (per night)',
-                              hint: '150000',
-                              keyboardType: TextInputType.number,
+                child: Form(
+                  key: _formKey,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildTextField(
+                          controller: nameController,
+                          label: 'Campsite Name',
+                          hint: 'Enter campsite name',
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: locationController,
+                          label: 'Location',
+                          hint: 'Enter location',
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildTextField(
+                                controller: latitudeController,
+                                label: 'Latitude',
+                                hint: '150000',
+                                keyboardType: TextInputType.number,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildTextField(
-                              controller: _capacityController,
-                              label: 'Capacity',
-                              hint: '50',
-                              keyboardType: TextInputType.number,
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildTextField(
+                                controller: longitudeController,
+                                label: 'Longitude',
+                                hint: '50',
+                                keyboardType: TextInputType.number,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTextField(
-                        controller: _descriptionController,
-                        label: 'Description',
-                        hint: 'Enter description',
-                        maxLines: 4,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildTextField(
+                                controller: priceController,
+                                label: 'Price (per night)',
+                                hint: '150000',
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildTextField(
+                                controller: capacityController,
+                                label: 'Capacity',
+                                hint: '50',
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: facilitiesController,
+                          label: 'Description',
+                          hint: 'Enter description',
+                          maxLines: 4,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: descriptionController,
+                          label: 'Description',
+                          hint: 'Enter description',
+                          maxLines: 4,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -400,8 +495,49 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
-                          setState(() => showAddForm = false);
+                        onPressed: () async {
+                          if (!_formKey.currentState!.validate()) return;
+
+                          final campsiteData = {
+                            'name': nameController.text,
+                            'description': descriptionController.text,
+                            'location_name': locationController.text,
+                            'latitude': double.parse(latitudeController.text),
+                            'longitude': double.parse(longitudeController.text),
+                            'capacity': int.parse(capacityController.text),
+                            'price_per_night': double.parse(
+                              priceController.text,
+                            ),
+                            'facilities': facilitiesController.text,
+                            'image_url': imageUrlController.text.isEmpty
+                                ? null
+                                : imageUrlController.text,
+                          };
+
+                          print("<=== FORM DATA CAMPSITE ===>");
+                          print(campsiteData);
+                          print("<=== FORM DATA CAMPSITE ===>");
+
+                          try {
+                            await apiService.createCampsite(campsiteData);
+
+                            Navigator.pop(context); // close modal
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Campsite created successfully'),
+                              ),
+                            );
+
+                            // OPTIONAL: refresh list here
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(e.toString())),
+                            );
+                            print("<=== ERROR FORM ===>");
+                            print(e.toString());
+                            print("<=== ERROR FORM ===>");
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF2563EB),
@@ -477,9 +613,9 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
 
   String _formatPrice(int price) {
     return price.toString().replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]}.',
-        );
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]}.',
+    );
   }
 
   List<Map<String, dynamic>> _getCampsites() {
@@ -493,7 +629,8 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
         'rating': 4.8,
         'reviews': 124,
         'status': 'active',
-        'image': 'https://images.unsplash.com/photo-1633803504744-1b8a284cd3cc?w=400',
+        'image':
+            'https://images.unsplash.com/photo-1633803504744-1b8a284cd3cc?w=400',
         'facilities': ['Toilet', 'WiFi', 'BBQ Area'],
       },
       {
@@ -505,7 +642,8 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
         'rating': 4.9,
         'reviews': 89,
         'status': 'active',
-        'image': 'https://images.unsplash.com/photo-1471115853179-bb1d604434e0?w=400',
+        'image':
+            'https://images.unsplash.com/photo-1471115853179-bb1d604434e0?w=400',
         'facilities': ['Toilet', 'Parking', 'Mountain View'],
       },
       {
@@ -517,7 +655,8 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
         'rating': 4.7,
         'reviews': 156,
         'status': 'active',
-        'image': 'https://images.unsplash.com/photo-1589051355082-e983d7e81181?w=400',
+        'image':
+            'https://images.unsplash.com/photo-1589051355082-e983d7e81181?w=400',
         'facilities': ['Toilet', 'Fishing', 'Lake Access'],
       },
       {
@@ -529,7 +668,8 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
         'rating': 4.6,
         'reviews': 98,
         'status': 'inactive',
-        'image': 'https://images.unsplash.com/photo-1600403506000-62e42b6e3238?w=400',
+        'image':
+            'https://images.unsplash.com/photo-1600403506000-62e42b6e3238?w=400',
         'facilities': ['Toilet', 'Beach Access', 'Sunset View'],
       },
     ];
