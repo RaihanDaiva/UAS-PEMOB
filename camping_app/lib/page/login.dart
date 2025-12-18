@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../page/register.dart';
+import 'admin_app.dart';
 
 // COLORS
 const Color primaryGreen = Color(0xFF0BA84A);
@@ -30,11 +31,13 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => loading = false);
 
     if (response.statusCode == 200) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Login berhasil')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Login berhasil')));
     } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Login gagal')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Login gagal')));
     }
   }
 
@@ -56,6 +59,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 _inputField('Password', passwordController, obscure: true),
                 const SizedBox(height: 24),
                 _submitButton('Sign In', login),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AdminApp()),
+                  ),
+                  child: const Text("DEBUG ADMIN LOGIN"),
+                ),
                 TextButton(
                   onPressed: () => Navigator.push(
                     context,
@@ -89,19 +100,13 @@ Widget _logo() {
           color: Colors.white,
         ),
       ),
-      Text(
-        'Smart Camping Booking',
-        style: TextStyle(color: Colors.white70),
-      ),
+      Text('Smart Camping Booking', style: TextStyle(color: Colors.white70)),
       SizedBox(height: 40),
     ],
   );
 }
 
-Widget _card({
-  required String title,
-  required List<Widget> children,
-}) {
+Widget _card({required String title, required List<Widget> children}) {
   return Container(
     margin: const EdgeInsets.symmetric(horizontal: 20),
     padding: const EdgeInsets.all(20),
@@ -115,10 +120,7 @@ Widget _card({
         Text(
           title,
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 20),
         ...children,
@@ -127,23 +129,21 @@ Widget _card({
   );
 }
 
-Widget _submitButton(String text, VoidCallback onPressed,
-    {bool loading = false}) {
+Widget _submitButton(
+  String text,
+  VoidCallback onPressed, {
+  bool loading = false,
+}) {
   return ElevatedButton(
     onPressed: loading ? null : onPressed,
     style: ElevatedButton.styleFrom(
       backgroundColor: primaryGreen,
       padding: const EdgeInsets.symmetric(vertical: 14),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
     child: loading
         ? const CircularProgressIndicator(color: Colors.white)
-        : Text(
-            text,
-            style: const TextStyle(color: Colors.white),
-          ),
+        : Text(text, style: const TextStyle(color: Colors.white)),
   );
 }
 
@@ -169,9 +169,11 @@ Widget _warningBox() {
   );
 }
 
-
-Widget _inputField(String label, TextEditingController controller,
-    {bool obscure = false}) {
+Widget _inputField(
+  String label,
+  TextEditingController controller, {
+  bool obscure = false,
+}) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
