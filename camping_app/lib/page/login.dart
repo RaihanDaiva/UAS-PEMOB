@@ -1,0 +1,190 @@
+import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
+import '../page/register.dart';
+
+// COLORS
+const Color primaryGreen = Color(0xFF0BA84A);
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  bool isAdminMode = false;
+  bool loading = false;
+
+  Future<void> login() async {
+    setState(() => loading = true);
+
+    final response = await AuthService.login(
+      email: emailController.text,
+      password: passwordController.text,
+      role: isAdminMode ? 'admin' : 'client',
+    );
+
+    setState(() => loading = false);
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Login berhasil')));
+    } else {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Login gagal')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: primaryGreen,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(height: 80),
+            _logo(),
+
+            _card(
+              title: 'Welcome Back',
+              children: [
+                _inputField('Email', emailController),
+                const SizedBox(height: 16),
+                _inputField('Password', passwordController, obscure: true),
+                const SizedBox(height: 24),
+                _submitButton('Sign In', login),
+                TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                  ),
+                  child: const Text("Don't have an account? Sign Up"),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Widget _logo() {
+  return Column(
+    children: const [
+      CircleAvatar(
+        radius: 40,
+        backgroundColor: Colors.white,
+        child: Icon(Icons.park, size: 40, color: primaryGreen),
+      ),
+      SizedBox(height: 16),
+      Text(
+        'CampEase',
+        style: TextStyle(
+          fontSize: 26,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+      Text(
+        'Smart Camping Booking',
+        style: TextStyle(color: Colors.white70),
+      ),
+      SizedBox(height: 40),
+    ],
+  );
+}
+
+Widget _card({
+  required String title,
+  required List<Widget> children,
+}) {
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 20),
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(24),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 20),
+        ...children,
+      ],
+    ),
+  );
+}
+
+Widget _submitButton(String text, VoidCallback onPressed,
+    {bool loading = false}) {
+  return ElevatedButton(
+    onPressed: loading ? null : onPressed,
+    style: ElevatedButton.styleFrom(
+      backgroundColor: primaryGreen,
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+    child: loading
+        ? const CircularProgressIndicator(color: Colors.white)
+        : Text(
+            text,
+            style: const TextStyle(color: Colors.white),
+          ),
+  );
+}
+
+Widget _warningBox() {
+  return Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: Colors.yellow.shade100,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.orange),
+    ),
+    child: const Row(
+      children: [
+        Icon(Icons.warning, color: Colors.orange),
+        SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            'Your account will need admin approval before you can start booking.',
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+
+Widget _inputField(String label, TextEditingController controller,
+    {bool obscure = false}) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label),
+      const SizedBox(height: 6),
+      TextField(
+        controller: controller,
+        obscureText: obscure,
+        decoration: InputDecoration(
+          hintText: 'Enter your ${label.toLowerCase()}',
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+    ],
+  );
+}
