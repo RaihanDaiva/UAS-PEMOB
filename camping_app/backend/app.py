@@ -15,7 +15,7 @@ app = Flask(__name__)
 # Configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:raihan123@localhost/camping_booking_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JWT_SECRET_KEY'] = 'your-secret-key-change-this-in-production'  # CHANGE THIS!
+app.config['JWT_SECRET_KEY'] = 'mysecret'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=7)
 
 # Initialize extensions
@@ -209,7 +209,7 @@ def login():
             return jsonify({'success': False, 'message': 'Account is deactivated'}), 403
         
         # Create access token
-        access_token = create_access_token(identity=user.id)
+        access_token = create_access_token(identity=str(user.id))
         
         return jsonify({
             'success': True,
