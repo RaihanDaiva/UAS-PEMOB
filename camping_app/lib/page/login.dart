@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import '../services/auth_service.dart';
 import '../page/register.dart';
 import 'admin_app.dart';
+import 'client_app.dart';
 
 // COLORS
 const Color primaryGreen = Color(0xFF0BA84A);
@@ -25,19 +27,48 @@ class _LoginScreenState extends State<LoginScreen> {
     final response = await AuthService.login(
       email: emailController.text,
       password: passwordController.text,
-      role: isAdminMode ? 'admin' : 'client',
     );
 
     setState(() => loading = false);
 
     if (response.statusCode == 200) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Login berhasil')));
+      final data = jsonDecode(response.body);
+
+      if (data['success'] == true) {
+        final String role = data['user']['role'];
+        final String status = data['user']['registration_status'];
+
+        if (status != 'approved') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Akun belum disetujui admin')),
+          );
+          return;
+        }
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Login berhasil')));
+
+        if (role == 'admin') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const AdminApp()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const ClientApp()),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Login gagal')));
+      }
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Login gagal')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login gagal (${response.statusCode})')),
+      );
     }
   }
 
@@ -48,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            const SizedBox(height: 80),
+            const SizedBox(height: 140),
             _logo(),
 
             _card(
