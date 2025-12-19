@@ -16,6 +16,7 @@ class CampsiteManagementScreen extends StatefulWidget {
 class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
   // Form.. type shit
   final _formKey = GlobalKey<FormState>();
+  int? editingCampsiteId;
 
   bool showAddForm = false;
   final TextEditingController nameController = TextEditingController();
@@ -30,11 +31,17 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
 
   // Service Variable
   late Future<List<Campsite>> _campsitesFuture;
+  List<Campsite> _campsites = [];
+
   final ApiService _apiService = ApiService();
 
   @override
   void initState() {
     super.initState();
+    _loadCampsites();
+  }
+
+  void _loadCampsites() {
     _campsitesFuture = _apiService.getCampsites();
   }
 
@@ -88,7 +95,7 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                             ),
                           ),
                           Text(
-                            '${campsites.length} campsites',
+                            '${_campsites.length} campsites',
                             style: const TextStyle(
                               color: Color(0xFFDBEAFE),
                               fontSize: 14,
@@ -102,7 +109,11 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                       backgroundColor: Colors.white,
                       child: IconButton(
                         icon: const Icon(Icons.add, color: Color(0xFF2563EB)),
-                        onPressed: () => setState(() => showAddForm = true),
+                        onPressed: () {
+                          editingCampsiteId = null;
+                          _clearForm();
+                          setState(() => showAddForm = true);
+                        },
                       ),
                     ),
                   ],
@@ -119,21 +130,15 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                     }
 
                     if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}'));
+                      return Center(child: Text(snapshot.error.toString()));
                     }
 
-                    final campsites = snapshot.data!;
-
-                    if (campsites.isEmpty) {
-                      return const Center(
-                        child: Text('No campsites available'),
-                      );
-                    }
+                    _campsites = snapshot.data!;
 
                     return ListView.builder(
-                      itemCount: campsites.length,
+                      itemCount: _campsites.length,
                       itemBuilder: (context, index) =>
-                          _buildCampsiteCard(campsites[index]),
+                          _buildCampsiteCard(_campsites[index]),
                     );
                   },
                 ),
@@ -146,6 +151,18 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
         ],
       ),
     );
+  }
+
+  void _clearForm() {
+    nameController.clear();
+    descriptionController.clear();
+    locationController.clear();
+    latitudeController.clear();
+    longitudeController.clear();
+    capacityController.clear();
+    priceController.clear();
+    facilitiesController.clear();
+    imageUrlController.clear();
   }
 
   Widget _buildCampsiteCard(Campsite campsite) {
@@ -310,7 +327,20 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                                 color: Color(0xFF2563EB),
                               ),
                               onPressed: () {
-                                // Edit logic
+                                // isi controller dari campsite
+                                nameController.text = campsite.name;
+                                locationController.text = campsite.locationName;
+                                priceController.text = campsite.pricePerNight
+                                    .toString();
+                                capacityController.text = campsite.capacity
+                                    .toString();
+                                descriptionController.text =
+                                    campsite.description ?? '';
+                                imageUrlController.text =
+                                    campsite.imageUrl ?? '';
+
+                                showAddForm = true;
+                                setState(() {});
                               },
                               padding: const EdgeInsets.all(8),
                               constraints: const BoxConstraints(),
@@ -328,8 +358,32 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                                 size: 16,
                                 color: Color(0xFFDC2626),
                               ),
-                              onPressed: () {
-                                // Delete logic
+                              onPressed: () async {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (_) => AlertDialog(
+                                    title: const Text('Delete Campsite'),
+                                    content: const Text('Are you sure?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
+                                        child: const Text('Delete'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+
+                                if (confirm == true) {
+                                  await apiService.deleteCampsite(campsite.id);
+                                  _loadCampsites();
+                                  setState(() {});
+                                }
                               },
                               padding: const EdgeInsets.all(8),
                               constraints: const BoxConstraints(),
@@ -502,12 +556,17 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                             'name': nameController.text,
                             'description': descriptionController.text,
                             'location_name': locationController.text,
-                            'latitude': double.parse(latitudeController.text),
-                            'longitude': double.parse(longitudeController.text),
+                            'latitude':
+                                double.tryParse(latitudeController.text) ?? 0.0,
+                            'longitude':
+                                double.tryParse(longitudeController.text) ??
+                                0.0,
                             'capacity': int.parse(capacityController.text),
-                            'price_per_night': double.parse(
-                              priceController.text,
-                            ),
+                            // 'price_per_night': priceController.text.isNotEmpty
+                            //     ? double.parse(priceController.text)
+                            //     : 0.0,
+                            'price_per_night':
+                                double.tryParse(priceController.text) ?? 0.0,
                             'facilities': facilitiesController.text,
                             'image_url': imageUrlController.text.isEmpty
                                 ? null
