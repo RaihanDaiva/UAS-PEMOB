@@ -2,14 +2,49 @@ import 'package:camping_app/models/user.dart';
 import 'package:camping_app/services/api_admin_services.dart';
 import 'package:flutter/material.dart';
 
-class PendingApprovalsScreen extends StatelessWidget {
+class PendingApprovalsScreen extends StatefulWidget {
   final VoidCallback onBack;
-  // final ApiService apiService = ApiService();
 
-  PendingApprovalsScreen({
+  const PendingApprovalsScreen({
     Key? key,
     required this.onBack,
   }) : super(key: key);
+
+  @override
+  State<PendingApprovalsScreen> createState() =>
+      _PendingApprovalsScreenState();
+}
+
+class _PendingApprovalsScreenState extends State<PendingApprovalsScreen> {
+  late Future<List<User>> _pendingUsersFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPendingUsers();
+  }
+
+  void _loadPendingUsers() {
+    _pendingUsersFuture = apiService.getPendingUsers();
+  }
+
+  Future<void> _handleApproval(int userId, String action) async {
+    try {
+      await apiService.approveRejectUser(userId, action);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('User ${action}d successfully')),
+      );
+
+      setState(() {
+        _loadPendingUsers(); // 🔥 refresh list
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +54,7 @@ class PendingApprovalsScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: onBack,
+          onPressed: widget.onBack,
         ),
         title: const Text(
           'Pending Approvals',
@@ -27,7 +62,7 @@ class PendingApprovalsScreen extends StatelessWidget {
         ),
       ),
       body: FutureBuilder<List<User>>(
-        future: apiService.getPendingUsers(),
+        future: _pendingUsersFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -42,12 +77,10 @@ class PendingApprovalsScreen extends StatelessWidget {
             );
           }
 
-          final users = snapshot.data!;
+          final users = snapshot.data ?? [];
 
           if (users.isEmpty) {
-            return const Center(
-              child: Text('No pending users'),
-            );
+            return const Center(child: Text('No pending users'));
           }
 
           return ListView.builder(
@@ -98,7 +131,7 @@ class PendingApprovalsScreen extends StatelessWidget {
                     ),
                     if (user.createdAt != null)
                       Text(
-                        'Registered: ${user.createdAt}',
+                        'Registered: ${user.createdAt!.toLocal()}',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFF6B7280),
@@ -124,9 +157,8 @@ class PendingApprovalsScreen extends StatelessWidget {
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    // TODO: approve user API
-                  },
+                  onPressed: () =>
+                      _handleApproval(user.id, 'approve'),
                   icon: const Icon(Icons.check_circle),
                   label: const Text('Approve'),
                   style: ElevatedButton.styleFrom(
@@ -141,9 +173,8 @@ class PendingApprovalsScreen extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    // TODO: reject user API
-                  },
+                  onPressed: () =>
+                      _handleApproval(user.id, 'reject'),
                   icon: const Icon(Icons.cancel),
                   label: const Text('Reject'),
                   style: ElevatedButton.styleFrom(
