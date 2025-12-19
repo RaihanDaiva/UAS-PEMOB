@@ -13,7 +13,7 @@ class ApiService {
 
   // Alternative base URLs (uncomment the one you need):
   static const String baseUrl =
-      'http://192.168.100.29:5000/api'; // Physical device
+      'http://192.168.100.30:5000/api'; // Physical device
   // static const String baseUrl = 'http://localhost:5000/api'; // iOS Simulator
 
   String? _token;
