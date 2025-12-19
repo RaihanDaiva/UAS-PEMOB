@@ -5,11 +5,8 @@ class UserDetailScreen extends StatefulWidget {
   final int userId;
   final VoidCallback onBack;
 
-  const UserDetailScreen({
-    Key? key,
-    required this.userId,
-    required this.onBack,
-  }) : super(key: key);
+  const UserDetailScreen({Key? key, required this.userId, required this.onBack})
+    : super(key: key);
 
   @override
   State<UserDetailScreen> createState() => _UserDetailScreenState();
@@ -34,16 +31,15 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
       });
     } catch (e) {
       setState(() => loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load user detail: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to load user detail: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       /// 🔵 BLUE NAVBAR
       appBar: AppBar(
         backgroundColor: const Color(0xFF2563EB),
@@ -57,92 +53,106 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
           onPressed: widget.onBack,
         ),
       ),
-
+      backgroundColor: const Color(0xFFF9FAFB),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : user == null
-              ? const Center(child: Text('User not found'))
-              : SingleChildScrollView(
+          ? const Center(child: Text('User not found'))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Card(
+                color: Colors.white,
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
                   padding: const EdgeInsets.all(24),
-                  child: Card(
-                    color: const Color(0xFFF9FAFB),
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      /// 👤 HEADER USER
+                      Row(
                         children: [
-                          /// 👤 HEADER USER
-                          Row(
-                            children: [
-                              const CircleAvatar(
-                                radius: 36,
-                                backgroundColor: Color(0xFFE5E7EB),
-                                child: Icon(Icons.person, size: 36, color: Color(0xFF6B7280)),
-                              ),
-                              const SizedBox(width: 20),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                          const CircleAvatar(
+                            radius: 36,
+                            backgroundColor: Color(0xFFE5E7EB),
+                            child: Icon(
+                              Icons.person,
+                              size: 36,
+                              color: Color(0xFF6B7280),
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  user!['full_name'] ?? '-',
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  user!['email'] ?? '-',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF6B7280),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Wrap(
+                                  spacing: 8,
                                   children: [
-                                    Text(
-                                      user!['full_name'] ?? '-',
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                    _buildInfoChip(
+                                      user!['role'] ?? '-',
+                                      Colors.blue,
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      user!['email'] ?? '-',
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        color: Color(0xFF6B7280),
-                                      ),
+                                    _buildInfoChip(
+                                      user!['is_active'] == true
+                                          ? 'Active'
+                                          : 'Inactive',
+                                      user!['is_active'] == true
+                                          ? Colors.green
+                                          : Colors.red,
                                     ),
-                                    const SizedBox(height: 12),
-                                    Wrap(
-                                      spacing: 8,
-                                      children: [
-                                        _buildInfoChip(user!['role'] ?? '-', Colors.blue),
-                                        _buildInfoChip(
-                                          user!['is_active'] == true ? 'Active' : 'Inactive',
-                                          user!['is_active'] == true ? Colors.green : Colors.red,
-                                        ),
-                                        _buildInfoChip(
-                                          user!['registration_status'] ?? '-',
-                                          Colors.orange,
-                                        ),
-                                      ],
+                                    _buildInfoChip(
+                                      user!['registration_status'] ?? '-',
+                                      Colors.orange,
                                     ),
                                   ],
                                 ),
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 32),
-                          const Divider(),
-
-                          /// 📋 DETAIL INFO
-                          _buildDetailRow('Phone Number', user!['phone_number'] ?? '-'),
-                          _buildDetailRow('Address', user!['address'] ?? '-'),
-                          _buildDetailRow(
-                            'Joined',
-                            user!['created_at']?.substring(0, 10) ?? '-',
-                          ),
-                          _buildDetailRow(
-                            'Total Bookings',
-                            user!['total_bookings']?.toString() ?? '0',
+                              ],
+                            ),
                           ),
                         ],
                       ),
-                    ),
+
+                      const SizedBox(height: 32),
+                      const Divider(),
+
+                      /// 📋 DETAIL INFO
+                      _buildDetailRow(
+                        'Phone Number',
+                        user!['phone_number'] ?? '-',
+                      ),
+                      _buildDetailRow('Address', user!['address'] ?? '-'),
+                      _buildDetailRow(
+                        'Joined',
+                        user!['created_at']?.substring(0, 10) ?? '-',
+                      ),
+                      _buildDetailRow(
+                        'Total Bookings',
+                        user!['total_bookings']?.toString() ?? '0',
+                      ),
+                    ],
                   ),
                 ),
+              ),
+            ),
     );
   }
 

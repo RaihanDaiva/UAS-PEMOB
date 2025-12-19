@@ -66,6 +66,7 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
     final campsites = _getCampsites();
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF9FAFB),
       body: Stack(
         children: [
           Column(
@@ -96,13 +97,13 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Text(
-                            '${_campsites.length} campsites',
-                            style: const TextStyle(
-                              color: Color(0xFFDBEAFE),
-                              fontSize: 14,
-                            ),
-                          ),
+                          // Text(
+                          //   '${_campsites.length} campsites',
+                          //   style: const TextStyle(
+                          //     color: Color(0xFFDBEAFE),
+                          //     fontSize: 14,
+                          //   ),
+                          // ),
                         ],
                       ),
                     ),
@@ -510,13 +511,13 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        _buildTextField(
-                          controller: facilitiesController,
-                          label: 'Description',
-                          hint: 'Enter description',
-                          maxLines: 4,
-                        ),
+                        // const SizedBox(height: 16),
+                        // _buildTextField(
+                        //   controller: facilitiesController,
+                        //   label: 'Description',
+                        //   hint: 'Enter description',
+                        //   maxLines: 4,
+                        // ),
                         const SizedBox(height: 16),
                         _buildTextField(
                           controller: descriptionController,
@@ -582,14 +583,16 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                           print("<=== FORM DATA CAMPSITE ===>");
 
                           try {
-                            if(!isEditing) {
+                            if (!isEditing) {
                               await apiService.createCampsite(campsiteData);
                             } else {
-                              await apiService.updateCampsite(editedId, campsiteData);
+                              await apiService.updateCampsite(
+                                editedId,
+                                campsiteData,
+                              );
                               editedId = 0;
                               isEditing = false;
                             }
-
 
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -620,7 +623,9 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                           ),
                           elevation: 0,
                         ),
-                        child: Text(isEditing ? 'Edit Campsite' : 'Add Campsite'),
+                        child: Text(
+                          isEditing ? 'Edit Campsite' : 'Add Campsite',
+                        ),
                       ),
                     ),
                   ],

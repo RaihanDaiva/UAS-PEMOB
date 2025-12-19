@@ -112,31 +112,33 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             ),
           ),
 
-          // Filter Tabs
-          Container(
-            color: const Color(0xFFF9FAFB),
-            padding: const EdgeInsets.all(24),
-            child: Row(
-              children: [
-                _buildFilterChip('All', 'all', users.length),
-                const SizedBox(width: 8),
-                _buildFilterChip('Active', 'active', _getActiveUsers().length),
-                const SizedBox(width: 8),
-                _buildFilterChip(
-                  'Inactive',
-                  'inactive',
-                  _getInactiveUsers().length,
-                ),
-              ],
-            ),
-          ),
+          SizedBox(height: 12),
+          // // Filter Tabs
+          // Container(
+          //   color: const Color(0xFFF9FAFB),
+          //   padding: const EdgeInsets.all(24),
+          //   child: Row(
+          //     children: [
+          //       _buildFilterChip('All', 'all', users.length),
+          //       const SizedBox(width: 8),
+          //       _buildFilterChip('Active', 'active', _getActiveUsers().length),
+          //       const SizedBox(width: 8),
+          //       _buildFilterChip(
+          //         'Inactive',
+          //         'inactive',
+          //         _getInactiveUsers().length,
+          //       ),
+          //     ],
+          //   ),
+          // ),
 
           // Users List
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              itemCount: users.length,
-              itemBuilder: (context, index) => _buildUserCard(users[index]),
+              itemCount: filteredUsers.length,
+              itemBuilder: (context, index) =>
+                  _buildUserCard(filteredUsers[index]),
             ),
           ),
         ],
@@ -277,28 +279,6 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      width: 100,
-                      child: ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isActive
-                              ? const Color(0xFFDC2626)
-                              : const Color(0xFF16A34A),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          isActive ? 'Deactivate' : 'Activate',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ],
@@ -325,7 +305,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   }
 
   List<Map<String, dynamic>> _getFilteredUsers() {
-    var result = users;
+    List<Map<String, dynamic>> result = List<Map<String, dynamic>>.from(users);
 
     if (filterStatus != 'all') {
       result = result.where((u) => u['status'] == filterStatus).toList();
@@ -334,8 +314,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     if (searchQuery.isNotEmpty) {
       final q = searchQuery.toLowerCase();
       result = result.where((u) {
-        return u['name'].toLowerCase().contains(q) ||
-            u['email'].toLowerCase().contains(q);
+        final name = (u['name'] ?? '').toString().toLowerCase();
+        final email = (u['email'] ?? '').toString().toLowerCase();
+
+        return name.contains(q) || email.contains(q);
       }).toList();
     }
 

@@ -149,8 +149,8 @@ class _PendingApprovalsScreenState extends State<PendingApprovalsScreen> {
           _buildInfoRow(Icons.email_outlined, user.email),
           if (user.phoneNumber != null)
             _buildInfoRow(Icons.phone_outlined, user.phoneNumber!),
-          if (user.address != null)
-            _buildInfoRow(Icons.location_on_outlined, user.address!),
+          // if (user.address != null)
+          //   _buildInfoRow(Icons.location_on_outlined, user.address!),
 
           const SizedBox(height: 16),
 
@@ -160,8 +160,8 @@ class _PendingApprovalsScreenState extends State<PendingApprovalsScreen> {
                 child: ElevatedButton.icon(
                   onPressed: () =>
                       _handleApproval(user.id, 'approve'),
-                  icon: const Icon(Icons.check_circle),
-                  label: const Text('Approve'),
+                  icon: const Icon(Icons.check_circle, color: Colors.white),
+                  label: const Text('Approve', style: TextStyle(color: Colors.white)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     padding: const EdgeInsets.symmetric(vertical: 12),
@@ -176,8 +176,8 @@ class _PendingApprovalsScreenState extends State<PendingApprovalsScreen> {
                 child: ElevatedButton.icon(
                   onPressed: () =>
                       _handleApproval(user.id, 'reject'),
-                  icon: const Icon(Icons.cancel),
-                  label: const Text('Reject'),
+                  icon: const Icon(Icons.cancel, color: Colors.white,),
+                  label: const Text('Reject', style: TextStyle(color: Colors.white)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
                     padding: const EdgeInsets.symmetric(vertical: 12),

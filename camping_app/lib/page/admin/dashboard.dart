@@ -177,18 +177,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             ),
                           ],
                         ),
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Icon(
-                            Icons.notifications_outlined,
-                            color: Colors.white,
-                          ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -252,12 +240,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         loadingCampsites ? '...' : totalCampsites.toString(),
                         Colors.purple,
                       ),
-                      _buildStatCard(
-                        Icons.attach_money,
-                        'Revenue',
-                        '45M',
-                        Colors.yellow.shade700,
-                      ),
+                      // _buildStatCard(
+                      //   Icons.attach_money,
+                      //   'Revenue',
+                      //   '45M',
+                      //   Colors.yellow.shade700,
+                      // ),
                     ],
                   ),
                 ),

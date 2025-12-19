@@ -95,13 +95,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextButton(
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const AdminApp()),
-                  ),
-                  child: const Text("DEBUG ADMIN LOGIN"),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.push(
-                    context,
                     MaterialPageRoute(builder: (_) => const RegisterScreen()),
                   ),
                   child: const Text("Don't have an account? Sign Up"),

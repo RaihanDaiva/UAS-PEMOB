@@ -130,28 +130,28 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                                   Wrap(
                                     spacing: 8,
                                     children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: _getStatusColor(
-                                            booking!['booking_status'] ?? '',
-                                          ),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: Text(
-                                          booking!['booking_status'] ?? 'N/A',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: _getStatusTextColor(
-                                              booking!['booking_status'] ?? '',
-                                            ),
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ),
+                                      // Container(
+                                      //   padding: const EdgeInsets.symmetric(
+                                      //     horizontal: 12,
+                                      //     vertical: 6,
+                                      //   ),
+                                      //   decoration: BoxDecoration(
+                                      //     color: _getStatusColor(
+                                      //       booking!['booking_status'] ?? '',
+                                      //     ),
+                                      //     borderRadius: BorderRadius.circular(12),
+                                      //   ),
+                                      //   child: Text(
+                                      //     booking!['booking_status'] ?? 'N/A',
+                                      //     style: TextStyle(
+                                      //       fontSize: 12,
+                                      //       color: _getStatusTextColor(
+                                      //         booking!['booking_status'] ?? '',
+                                      //       ),
+                                      //       fontWeight: FontWeight.w500,
+                                      //     ),
+                                      //   ),
+                                      // ),
                                     ],
                                   ),
                                 ],

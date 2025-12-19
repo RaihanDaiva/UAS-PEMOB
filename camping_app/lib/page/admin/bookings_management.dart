@@ -119,25 +119,27 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
             ),
           ),
 
+          SizedBox(height: 16),
+
           // Filter Tabs
-          Container(
+          // Container(
             
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildFilterChip('All', 'all'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Confirmed', 'confirmed'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Pending', 'pending'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Cancelled', 'cancelled'),
-                ],
-              ),
-            ),
-          ),
+          //   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          //   child: SingleChildScrollView(
+          //     scrollDirection: Axis.horizontal,
+          //     child: Row(
+          //       children: [
+          //         _buildFilterChip('All', 'all'),
+          //         const SizedBox(width: 8),
+          //         _buildFilterChip('Confirmed', 'confirmed'),
+          //         const SizedBox(width: 8),
+          //         _buildFilterChip('Pending', 'pending'),
+          //         const SizedBox(width: 8),
+          //         _buildFilterChip('Cancelled', 'cancelled'),
+          //       ],
+          //     ),
+          //   ),
+          // ),
 
           // Bookings List
           Expanded(
@@ -226,7 +228,7 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
                         ),
                       ],
                     ),
-                    _buildStatusBadge(booking['booking_status']),
+                    // _buildStatusBadge(booking['booking_status']),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -280,11 +282,6 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(
-                          Icons.attach_money,
-                          color: Color(0xFF16A34A),
-                          size: 20,
-                        ),
                         Text(
                           'Rp ${_formatPrice((booking['total_price'] ?? 0).toInt())}',
                           style: const TextStyle(
