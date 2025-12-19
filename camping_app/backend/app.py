@@ -13,7 +13,7 @@ import os
 app = Flask(__name__)
 
 # Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:raihan123@localhost/camping_booking_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/camping_booking_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = 'mysecret'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=7)
@@ -209,7 +209,12 @@ def login():
             return jsonify({'success': False, 'message': 'Account is deactivated'}), 403
         
         # Create access token
-        access_token = create_access_token(identity=str(user.id))
+        access_token = create_access_token(
+            identity=str(user.id),
+            additional_claims={
+                "role": user.role
+            }
+        )
         
         return jsonify({
             'success': True,
@@ -444,6 +449,7 @@ def get_weather_recommendation(forecast):
 # ============================================
 
 from datetime import date
+from flask_jwt_extended import jwt_required, get_jwt
 import random
 import string
 
@@ -536,6 +542,36 @@ def get_my_bookings():
         
         bookings = Booking.query.filter_by(user_id=user_id)\
                                 .order_by(Booking.created_at.desc())\
+                                .all()
+        
+        result = []
+        for booking in bookings:
+            booking_dict = booking.to_dict()
+            booking_dict['campsite_name'] = booking.campsite.name
+            result.append(booking_dict)
+        
+        return jsonify({
+            'success': True,
+            'bookings': result
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    
+@app.route('/api/bookings/bookings-list', methods=['GET'])
+@jwt_required()
+def get_bookings_list():
+    try:
+        claims = get_jwt()
+
+        #  BATASI HANYA ADMIN
+        if claims.get('role') != 'admin':
+            return jsonify({
+                'success': False,
+                'message': 'Access denied. Admin only.'
+            }), 403
+        
+        bookings = Booking.query.order_by(Booking.created_at.desc())\
                                 .all()
         
         result = []
