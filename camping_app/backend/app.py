@@ -6,7 +6,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from flask_cors import CORS
 import bcrypt
-from datetime import timedelta
+import requests
+from datetime import datetime, timedelta
 import os
 
 # Initialize Flask app
@@ -404,75 +405,147 @@ from datetime import datetime, timedelta
 @app.route('/api/weather/forecast', methods=['GET'])
 @jwt_required()
 def get_weather_forecast():
+    """
+    Get weather forecast for a campsite location
+    Query params:
+        - campsite_id (required): ID of the campsite
+        - days (optional): Number of forecast days (default: 8, max: 16)
+    """
     try:
+        # Get query parameters
         campsite_id = request.args.get('campsite_id', type=int)
-        days = request.args.get('days', default=7, type=int)
+        days = request.args.get('days', default=8, type=int)
         
+        # Validate parameters
         if not campsite_id:
-            return jsonify({'success': False, 'message': 'campsite_id is required'}), 400
+            return jsonify({
+                'success': False, 
+                'message': 'campsite_id is required'
+            }), 400
         
-        # Get campsite
+        if days > 16:
+            days = 16  # Open-Meteo API maximum
+        
+        # Get campsite from database
         campsite = Campsite.query.get(campsite_id)
         if not campsite:
-            return jsonify({'success': False, 'message': 'Campsite not found'}), 404
+            return jsonify({
+                'success': False, 
+                'message': 'Campsite not found'
+            }), 404
         
-        # Call Open-Meteo API
-        url = "https://api.open-meteo.com/v1/forecast"
+        # Log request
+        print(f"🌤️  Weather Request")
+        print(f"   Campsite: {campsite.name} (ID: {campsite_id})")
+        print(f"   Location: {float(campsite.latitude)}, {float(campsite.longitude)}")
+        print(f"   Days: {days}")
+        
+        # Call Open-Meteo API (Free weather API, no key needed)
+        weather_api_url = "https://api.open-meteo.com/v1/forecast"
         params = {
             'latitude': float(campsite.latitude),
             'longitude': float(campsite.longitude),
-            'daily': 'temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,weather_code',
-            'hourly': 'temperature_2m',
-            'timezone': 'auto',
-            'past_days': 1,
+            'daily': 'temperature_2m_max,temperature_2m_min,weathercode,precipitation_probability_mean,windspeed_10m_max',
+            'timezone': 'Asia/Jakarta',
             'forecast_days': days
         }
         
-        response = requests.get(url, params=params)
+        # Make request to weather API
+        response = requests.get(weather_api_url, params=params, timeout=10)
+        
+        # Check response status
+        if response.status_code != 200:
+            print(f"❌ Open-Meteo API error: Status {response.status_code}")
+            print(f"   Response: {response.text[:200]}")
+            return jsonify({
+                'success': False, 
+                'message': f'Weather API returned status {response.status_code}'
+            }), 500
+        
+        # Parse weather data
         weather_data = response.json()
         
-        # Process daily weather data
-        daily_forecasts = []
-        if 'daily' in weather_data:
-            daily = weather_data['daily']
-            for i in range(len(daily['time'])):
-                forecast = {
-                    'date': daily['time'][i],
-                    'temperature_min': daily['temperature_2m_min'][i],
-                    'temperature_max': daily['temperature_2m_max'][i],
-                    'temperature_avg': (daily['temperature_2m_min'][i] + 
-                                       daily['temperature_2m_max'][i]) / 2,
-                    'precipitation_probability': daily.get('precipitation_probability_max', [0])[i] if i < len(daily.get('precipitation_probability_max', [])) else 0,
-                    'wind_speed': daily.get('wind_speed_10m_max', [0])[i] if i < len(daily.get('wind_speed_10m_max', [])) else 0,
-                    'weather_code': daily['weather_code'][i],
-                    'weather_description': get_weather_description(daily['weather_code'][i])
-                }
-                
-                # Calculate camping suitability
-                forecast['camping_suitability'] = calculate_camping_suitability(forecast)
-                forecast['recommendation'] = get_weather_recommendation(forecast)
-                
-                daily_forecasts.append(forecast)
+        # Extract daily data
+        daily = weather_data.get('daily', {})
+        dates = daily.get('time', [])
+        temps_max = daily.get('temperature_2m_max', [])
+        temps_min = daily.get('temperature_2m_min', [])
+        weather_codes = daily.get('weathercode', [])
+        precipitation = daily.get('precipitation_probability_mean', [])
+        wind_speeds = daily.get('windspeed_10m_max', [])
         
+        # Check if we got data
+        if not dates:
+            print(f"❌ No forecast data from API")
+            return jsonify({
+                'success': False, 
+                'message': 'No forecast data available'
+            }), 500
+        
+        # Format forecast data for Flutter
+        forecast = []
+        for i in range(len(dates)):
+            forecast.append({
+                'date': dates[i],
+                'temperature_max': round(temps_max[i], 1) if i < len(temps_max) else 25,
+                'temperature_min': round(temps_min[i], 1) if i < len(temps_min) else 20,
+                'weather_code': int(weather_codes[i]) if i < len(weather_codes) else 0,
+                'precipitation_probability': round(precipitation[i], 1) if i < len(precipitation) else 0,
+                'wind_speed': round(wind_speeds[i], 1) if i < len(wind_speeds) else 0,
+            })
+        
+        # Log success
+        print(f"✅ Successfully fetched {len(forecast)} days of forecast")
+        print(f"   Sample: {forecast[0] if forecast else 'No data'}")
+        
+        # Return formatted response
         return jsonify({
             'success': True,
             'campsite': {
                 'id': campsite.id,
                 'name': campsite.name,
-                'latitude': float(campsite.latitude),
-                'longitude': float(campsite.longitude)
+                'location': campsite.location_name
             },
-            'weather': {
-                'daily': daily_forecasts,
-                'hourly': weather_data.get('hourly', {})
-            },
-            'api_source': 'Open-Meteo Weather API',
-            'api_url': 'https://open-meteo.com',
-            'cached': False
+            'forecast': forecast,
+            'total_days': len(forecast)
         }), 200
         
+    except requests.Timeout:
+        print("❌ Weather API timeout (10s)")
+        return jsonify({
+            'success': False, 
+            'message': 'Weather API request timed out'
+        }), 504
+        
+    except requests.ConnectionError as e:
+        print(f"❌ Weather API connection error: {str(e)}")
+        return jsonify({
+            'success': False, 
+            'message': 'Could not connect to weather service'
+        }), 503
+        
+    except requests.RequestException as e:
+        print(f"❌ Weather API request error: {str(e)}")
+        return jsonify({
+            'success': False, 
+            'message': f'Weather API error: {str(e)}'
+        }), 500
+        
+    except KeyError as e:
+        print(f"❌ Missing key in weather data: {str(e)}")
+        return jsonify({
+            'success': False, 
+            'message': 'Invalid weather data format'
+        }), 500
+        
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
+        print(f"❌ Unexpected error in weather endpoint: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False, 
+            'message': f'Server error: {str(e)}'
+        }), 500
 
 def get_weather_description(code):
     """Convert WMO weather code to description"""

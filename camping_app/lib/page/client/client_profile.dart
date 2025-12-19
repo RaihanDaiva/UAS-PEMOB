@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'api_documentation.dart';
 
 class ClientProfile extends StatelessWidget {
   final VoidCallback onBack;
@@ -174,11 +175,21 @@ class ClientProfile extends StatelessWidget {
               child: Column(
                 children: [
                   _buildMenuItem(
-                    Icons.person_outline,
-                    'Edit Profile',
-                    const Color(0xFF10B981),
-                    const Color(0xFFD1FAE5),
-                    () {},
+                    Icons.api_outlined, // ← Ganti icon
+                    'API Documentation', // ← Ganti label
+                    const Color(0xFFF59E0B),
+                    const Color(0xFFFEF3C7),
+                    () {
+                      // ← Tambahkan navigation
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ApiDocumentation(
+                            onBack: () => Navigator.pop(context),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
                   _buildMenuItem(

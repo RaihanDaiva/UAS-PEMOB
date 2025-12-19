@@ -28,16 +28,38 @@ class _WeatherForecastState extends State<WeatherForecast> {
 
   Future<void> _fetchWeather() async {
     try {
-      final data = await apiService.getWeatherForecast(widget.campsite.id);
+      print('🌤️ Fetching weather for campsite: ${widget.campsite.id}');
+      print('   Name: ${widget.campsite.name}');
+
+      final data = await apiService.getWeatherForecast(
+        widget.campsite.id,
+        days: 8,
+      );
+
+      print('✅ Weather data keys: ${data.keys}');
+      print('   Forecast count: ${data['forecast']?.length ?? 0}');
+
+      if (data['forecast'] == null || (data['forecast'] as List).isEmpty) {
+        throw Exception('No forecast data available');
+      }
+
       setState(() {
         weatherData = data;
         loading = false;
       });
     } catch (e) {
+      print('❌ Weather error: $e');
       setState(() => loading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load weather: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
     }
   }
 
@@ -143,12 +165,23 @@ class _WeatherForecastState extends State<WeatherForecast> {
   }
 
   Widget _buildCurrentWeatherCard() {
-    if (weatherData == null) return const SizedBox.shrink();
+    if (weatherData == null) {
+      return Center(child: Text('No weather data available'));
+    }
 
-    final forecast = weatherData!['forecast'] as List? ?? [];
-    if (forecast.isEmpty) return const SizedBox.shrink();
+    final forecast = weatherData!['forecast'] as List?;
+    if (forecast == null || forecast.isEmpty) {
+      return Center(child: Text('Forecast data is empty'));
+    }
 
-    final today = forecast[1]; // Today's weather (index 1)
+    // Find today's index (should be 0 or 1)
+    final today = forecast.length > 1 ? forecast[1] : forecast[0];
+
+    final tempMax = (today['temperature_max'] ?? 25).toDouble();
+    final tempMin = (today['temperature_min'] ?? 20).toDouble();
+    final weatherCode = today['weather_code'] ?? 0;
+    final precipitation = (today['precipitation_probability'] ?? 0).toDouble();
+    final windSpeed = (today['wind_speed'] ?? 0).toDouble();
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -185,7 +218,7 @@ class _WeatherForecastState extends State<WeatherForecast> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${today['temperature_max']?.round() ?? 0}°',
+                    '${tempMax.round()}°',
                     style: const TextStyle(
                       fontSize: 48,
                       fontWeight: FontWeight.bold,
@@ -194,7 +227,7 @@ class _WeatherForecastState extends State<WeatherForecast> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _getWeatherCondition(today['weather_code'] ?? 0),
+                    _getWeatherCondition(weatherCode),
                     style: TextStyle(
                       fontSize: 18,
                       color: Colors.white.withOpacity(0.9),
@@ -203,7 +236,7 @@ class _WeatherForecastState extends State<WeatherForecast> {
                 ],
               ),
               Icon(
-                _getWeatherIcon(today['weather_code'] ?? 0),
+                _getWeatherIcon(weatherCode),
                 size: 80,
                 color: Colors.white.withOpacity(0.9),
               ),
@@ -223,19 +256,17 @@ class _WeatherForecastState extends State<WeatherForecast> {
                 _buildWeatherStat(
                   Icons.air,
                   'Wind',
-                  '${today['wind_speed']?.round() ?? 0} km/h',
+                  '${windSpeed.round()} km/h',
                 ),
                 _buildWeatherStat(
                   Icons.water_drop_outlined,
                   'Precipitation',
-                  '${today['precipitation_probability']?.round() ?? 0}%',
+                  '${precipitation.round()}%',
                 ),
                 _buildWeatherStat(
                   Icons.check_circle_outline,
                   'Camping',
-                  _getCampingSuitability(
-                    today['precipitation_probability']?.toDouble() ?? 0,
-                  )['text'],
+                  _getCampingSuitability(precipitation)['text'],
                 ),
               ],
             ),
@@ -268,17 +299,24 @@ class _WeatherForecastState extends State<WeatherForecast> {
   }
 
   Widget _buildForecastList() {
-    if (weatherData == null) return const SizedBox.shrink();
+    if (weatherData == null) {
+      return const Center(child: Text('No weather data'));
+    }
 
-    final forecast = weatherData!['forecast'] as List? ?? [];
+    final forecast = weatherData!['forecast'] as List?;
+    if (forecast == null || forecast.isEmpty) {
+      return const Center(child: Text('No forecast available'));
+    }
 
     return Column(
       children: forecast.map<Widget>((day) {
         final date = day['date'] ?? '';
-        final temp = day['temperature_max']?.round() ?? 0;
+        final tempMax = (day['temperature_max'] ?? 25).toDouble();
+        final tempMin = (day['temperature_min'] ?? 20).toDouble();
         final weatherCode = day['weather_code'] ?? 0;
-        final precipitation = day['precipitation_probability']?.toDouble() ?? 0;
-        final windSpeed = day['wind_speed']?.round() ?? 0;
+        final precipitation = (day['precipitation_probability'] ?? 0)
+            .toDouble();
+        final windSpeed = (day['wind_speed'] ?? 0).toDouble();
         final suitability = _getCampingSuitability(precipitation);
 
         return Container(
@@ -311,7 +349,7 @@ class _WeatherForecastState extends State<WeatherForecast> {
                       ),
                     ),
                     Text(
-                      date.substring(5),
+                      date.length >= 5 ? date.substring(5) : date,
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -343,7 +381,7 @@ class _WeatherForecastState extends State<WeatherForecast> {
                           ),
                         ),
                         Text(
-                          '$temp°C',
+                          '${tempMax.round()}°/${tempMin.round()}°C',
                           style: const TextStyle(
                             fontSize: 12,
                             color: Color(0xFF6B7280),
@@ -382,7 +420,7 @@ class _WeatherForecastState extends State<WeatherForecast> {
                       const Icon(Icons.air, size: 12, color: Color(0xFF6B7280)),
                       const SizedBox(width: 4),
                       Text(
-                        '${windSpeed}km/h',
+                        '${windSpeed.round()}km/h',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFF6B7280),
