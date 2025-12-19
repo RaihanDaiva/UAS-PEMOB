@@ -1,0 +1,22 @@
+# Flask Backend Dependencies for Camping App
+# Core Framework
+Flask==3.0.0
+Werkzeug==3.0.1
+
+# Database
+Flask-SQLAlchemy==3.1.1
+SQLAlchemy==2.0.23
+PyMySQL==1.1.0
+
+# Authentication & Security
+Flask-JWT-Extended==4.6.0
+bcrypt==4.1.2
+
+# CORS Support
+Flask-CORS==4.0.0
+
+# HTTP Requests (for Weather API)
+requests==2.31.0
+
+# Additional Utilities
+python-dotenv==1.0.0
