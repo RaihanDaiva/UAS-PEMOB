@@ -13,7 +13,7 @@ class ApiService {
 
   // Alternative base URLs (uncomment the one you need):
   static const String baseUrl =
-      'http://192.168.1.10:5000/api'; // Physical device
+      'http://192.168.100.6:5000/api'; // Physical device
   // static const String baseUrl = 'http://localhost:5000/api'; // iOS Simulator
 
   String? _token;
@@ -215,7 +215,7 @@ class ApiService {
   /// Get total users (admin only)
   Future<int> getTotalUsers() async {
     try {
-      final url = Uri.parse('$baseUrl/admin/users');
+      final url = Uri.parse('$baseUrl/admin/users/total');
       final response = await http.get(url, headers: _getHeaders());
       print('Status: ${response.statusCode}');
       print('Body: ${response.body}');
@@ -228,6 +228,19 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Get total users error: $e');
+    }
+  }
+
+  /// Get detail of a user (admin only)
+  Future<Map<String, dynamic>> getUserDetail(int userId) async {
+    final url = Uri.parse('$baseUrl/admin/users/$userId');
+    final response = await http.get(url, headers: _getHeaders());
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && data['success'] == true) {
+      return data['user'];
+    } else {
+      throw Exception(data['message'] ?? 'Failed to get user detail');
     }
   }
 

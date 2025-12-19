@@ -628,7 +628,7 @@ def approve_reject_user(target_user_id):
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
     
-@app.route('/api/admin/users', methods=['GET'])
+@app.route('/api/admin/users/total', methods=['GET'])
 @jwt_required()
 def get_total_users():
     try:
@@ -643,6 +643,69 @@ def get_total_users():
             'success': True,
             'total_users': total_users
         }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    
+@app.route('/api/admin/users', methods=['GET'])
+@jwt_required()
+def get_all_users():
+    try:
+        user_id = get_jwt_identity()
+        admin = User.query.get(user_id)
+
+        # Cek admin
+        if not admin or admin.role != 'admin':
+            return jsonify({
+                'success': False,
+                'message': 'Unauthorized'
+            }), 403
+
+        users = User.query.order_by(User.created_at.desc()).all()
+
+        users_data = []
+        for u in users:
+            users_data.append({
+                'id': u.id,
+                'name': u.full_name,
+                'email': u.email,
+                'status': 'active' if u.is_active else 'inactive',
+                'role': u.role,
+                'joined': u.created_at.strftime('%Y-%m-%d'),
+                'bookings': Booking.query.filter_by(user_id=u.id).count()
+            })
+
+        return jsonify({
+            'success': True,
+            'total_users': len(users_data),
+            'users': users_data
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+@app.route('/api/admin/users/<int:user_id>', methods=['GET'])
+@jwt_required()
+def get_user_detail(user_id):
+    try:
+        admin_id = get_jwt_identity()
+        admin = User.query.get(admin_id)
+        if not admin or admin.role != 'admin':
+            return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'success': False, 'message': 'User not found'}), 404
+
+        # Hitung total bookings user
+        total_bookings = Booking.query.filter_by(user_id=user.id).count()
+
+        user_data = user.to_dict()
+        user_data['total_bookings'] = total_bookings
+
+        return jsonify({'success': True, 'user': user_data}), 200
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
