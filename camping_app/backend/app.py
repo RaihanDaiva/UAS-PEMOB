@@ -13,7 +13,7 @@ import os
 app = Flask(__name__)
 
 # Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/camping_booking_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:raihan123@localhost/camping_booking_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = 'mysecret'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=7)
@@ -253,6 +253,24 @@ def get_campsites():
             'campsites': [campsite.to_dict() for campsite in campsites]
         }), 200
         
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/admin/campsites/total', methods=['GET'])
+@jwt_required()
+def get_total_campsites():
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        # Hanya admin yang boleh akses
+        if user.role != 'admin':
+            return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+        total_campsites = Campsite.query.count()
+        return jsonify({
+            'success': True,
+            'total_campsites': total_campsites
+        }), 200
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
@@ -606,6 +624,24 @@ def approve_reject_user(target_user_id):
         
     except Exception as e:
         db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    
+@app.route('/api/admin/users', methods=['GET'])
+@jwt_required()
+def get_total_users():
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        # Hanya admin yang boleh akses
+        if user.role != 'admin':
+            return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+        total_users = User.query.count()
+        return jsonify({
+            'success': True,
+            'total_users': total_users
+        }), 200
+    except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
 # ============================================

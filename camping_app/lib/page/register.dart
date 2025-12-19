@@ -17,6 +17,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final passwordController = TextEditingController();
   bool loading = false;
 
+
   Future<void> register() async {
     setState(() => loading = true);
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import '../services/auth_service.dart';
+import '../services/api_admin_services.dart';
 import '../page/register.dart';
 import 'admin_app.dart';
 import 'client_app.dart';
@@ -21,54 +22,54 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isAdminMode = false;
   bool loading = false;
 
+  final authService = AuthService();
+
   Future<void> login() async {
+    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Email dan password wajib diisi')),
+      );
+      return;
+    }
+
     setState(() => loading = true);
 
-    final response = await AuthService.login(
-      email: emailController.text,
-      password: passwordController.text,
-    );
-
-    setState(() => loading = false);
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-
-      if (data['success'] == true) {
-        final String role = data['user']['role'];
-        final String status = data['user']['registration_status'];
-
-        if (status != 'approved') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Akun belum disetujui admin')),
-          );
-          return;
-        }
-
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Login berhasil')));
-
-        if (role == 'admin') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const AdminApp()),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const ClientApp()),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Login gagal')));
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login gagal (${response.statusCode})')),
+    try {
+      final data = await authService.login(
+        emailController.text,
+        passwordController.text,
       );
+
+      apiService.setToken(data['access_token']);
+
+      final user = data['user'];
+      final role = user['role'];
+      final status = user['registration_status'];
+
+      if (status != 'approved') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Akun belum disetujui admin')),
+        );
+        return;
+      }
+
+      if (role == 'admin') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminApp()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ClientApp()),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally {
+      setState(() => loading = false);
     }
   }
 
@@ -221,3 +222,6 @@ Widget _inputField(
     ],
   );
 }
+
+// Singleton instance
+final authService = AuthService();

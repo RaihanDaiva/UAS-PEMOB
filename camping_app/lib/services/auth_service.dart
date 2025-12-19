@@ -4,21 +4,28 @@ import 'package:http/http.dart' as http;
 const String baseUrl = 'http://192.168.100.6:5000';
 
 class AuthService {
-  static Future<http.Response> login({
-    required String email,
-    required String password,
-  }) {
-    return http.post(
+  String? _token;
+
+  String? get token => _token;
+
+  Future<Map<String, dynamic>> login(String email, String password) async {
+    final response = await http.post(
       Uri.parse('$baseUrl/api/auth/login'),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-      }),
+      body: jsonEncode({'email': email, 'password': password}),
     );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && data['success'] == true) {
+      _token = data['access_token']; // 🔥 SIMPAN TOKEN
+      return data;
+    } else {
+      throw Exception(data['message'] ?? 'Login failed');
+    }
   }
 
   static Future<http.Response> register({

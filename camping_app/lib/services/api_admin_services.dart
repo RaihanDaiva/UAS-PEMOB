@@ -10,7 +10,7 @@ class ApiService {
   // static const String baseUrl = 'http://10.0.2.2:5000/api';
 
   // Alternative base URLs (uncomment the one you need):
-  static const String baseUrl = 'http://192.168.100.99:5000/api'; // Physical device
+  static const String baseUrl = 'http://192.168.100.6:5000/api'; // Physical device
   // static const String baseUrl = 'http://localhost:5000/api'; // iOS Simulator
 
   String? _token;
@@ -204,6 +204,25 @@ class ApiService {
     }
   }
 
+  /// Get total users (admin only)
+  Future<int> getTotalUsers() async {
+  try {
+    final url = Uri.parse('$baseUrl/admin/users');
+    final response = await http.get(url, headers: _getHeaders());
+    print('Status: ${response.statusCode}');
+    print('Body: ${response.body}');
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && data['success'] == true) {
+      return data['total_users'];
+    } else {
+      throw Exception(data['message'] ?? 'Failed to get total users');
+    }
+  } catch (e) {
+    throw Exception('Get total users error: $e');
+  }
+}
+
   // ============================================
   // ADMIN - BOOKING MANAGEMENT
   // ============================================
@@ -282,6 +301,25 @@ class ApiService {
           .toList();
     } else {
       throw Exception(data['message'] ?? 'Failed to get campsites');
+    }
+  }
+
+    /// Get total campsites (admin only)
+  Future<int> getTotalCampsites() async {
+    try {
+      final url = Uri.parse('$baseUrl/admin/campsites/total');
+      final response = await http.get(url, headers: _getHeaders());
+      print('Status: ${response.statusCode}');
+      print('Body: ${response.body}');
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        return data['total_campsites'];
+      } else {
+        throw Exception(data['message'] ?? 'Failed to get total campsites');
+      }
+    } catch (e) {
+      throw Exception('Get total campsites error: $e');
     }
   }
 
