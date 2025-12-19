@@ -1,7 +1,9 @@
 // lib/services/api_service.dart
 import 'dart:convert';
 import 'package:camping_app/models/campsite.dart';
+import 'package:camping_app/models/user.dart';
 import 'package:http/http.dart' as http;
+import 'auth_service.dart';
 
 class ApiService {
   // IMPORTANT: Change this to your Flask server IP address
@@ -10,7 +12,8 @@ class ApiService {
   // static const String baseUrl = 'http://10.0.2.2:5000/api';
 
   // Alternative base URLs (uncomment the one you need):
-  static const String baseUrl = 'http://192.168.100.6:5000/api'; // Physical device
+  static const String baseUrl =
+      'http://192.168.1.10:5000/api'; // Physical device
   // static const String baseUrl = 'http://localhost:5000/api'; // iOS Simulator
 
   String? _token;
@@ -140,20 +143,25 @@ class ApiService {
   // ============================================
 
   /// Get pending user approvals
-  Future<List<dynamic>> getPendingUsers() async {
+  Future<List<User>> getPendingUsers() async {
     try {
       final url = Uri.parse('$baseUrl/admin/users/pending');
 
       final response = await http.get(url, headers: _getHeaders());
 
       final data = jsonDecode(response.body);
+      print("data TYPE:");
+      print(data.runtimeType);
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return data['pending_users'];
+        return (data['pending_users'] as List)
+            .map((e) => User.fromJson(e))
+            .toList();
       } else {
         throw Exception(data['message'] ?? 'Failed to get pending users');
       }
     } catch (e) {
+      print('Pending users error: $e');
       throw Exception('Pending users error: $e');
     }
   }
@@ -206,22 +214,22 @@ class ApiService {
 
   /// Get total users (admin only)
   Future<int> getTotalUsers() async {
-  try {
-    final url = Uri.parse('$baseUrl/admin/users');
-    final response = await http.get(url, headers: _getHeaders());
-    print('Status: ${response.statusCode}');
-    print('Body: ${response.body}');
-    final data = jsonDecode(response.body);
+    try {
+      final url = Uri.parse('$baseUrl/admin/users');
+      final response = await http.get(url, headers: _getHeaders());
+      print('Status: ${response.statusCode}');
+      print('Body: ${response.body}');
+      final data = jsonDecode(response.body);
 
-    if (response.statusCode == 200 && data['success'] == true) {
-      return data['total_users'];
-    } else {
-      throw Exception(data['message'] ?? 'Failed to get total users');
+      if (response.statusCode == 200 && data['success'] == true) {
+        return data['total_users'];
+      } else {
+        throw Exception(data['message'] ?? 'Failed to get total users');
+      }
+    } catch (e) {
+      throw Exception('Get total users error: $e');
     }
-  } catch (e) {
-    throw Exception('Get total users error: $e');
   }
-}
 
   // ============================================
   // ADMIN - BOOKING MANAGEMENT
@@ -304,7 +312,7 @@ class ApiService {
     }
   }
 
-    /// Get total campsites (admin only)
+  /// Get total campsites (admin only)
   Future<int> getTotalCampsites() async {
     try {
       final url = Uri.parse('$baseUrl/admin/campsites/total');

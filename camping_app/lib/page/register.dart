@@ -20,6 +20,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> register() async {
     setState(() => loading = true);
+    print("<== REGISTERING ==>");
 
     final response = await AuthService.register(
       name: nameController.text,
@@ -27,6 +28,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       email: emailController.text,
       password: passwordController.text,
     );
+
+    print("AUTH SERVICE DONE");
 
     setState(() => loading = false);
 
