@@ -41,6 +41,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     final filteredUsers = _getFilteredUsers();
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF9FAFB),
       body: Column(
         children: [
           // Header with Search
@@ -113,6 +114,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 
           // Filter Tabs
           Container(
+            color: const Color(0xFFF9FAFB),
             padding: const EdgeInsets.all(24),
             child: Row(
               children: [
@@ -313,59 +315,6 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       child: Text(label, style: TextStyle(fontSize: 10, color: color)),
     );
   }
-
-  // List<Map<String, dynamic>> users {
-  //   return [
-  //     {
-  //       'id': 1,
-  //       'name': 'John Doe',
-  //       'email': 'john.doe@example.com',
-  //       'status': 'active',
-  //       'bookings': 12,
-  //       'joined': '2024-01-15',
-  //     },
-  //     {
-  //       'id': 2,
-  //       'name': 'Jane Smith',
-  //       'email': 'jane.smith@example.com',
-  //       'status': 'active',
-  //       'bookings': 8,
-  //       'joined': '2024-02-20',
-  //     },
-  //     {
-  //       'id': 3,
-  //       'name': 'Bob Wilson',
-  //       'email': 'bob.wilson@example.com',
-  //       'status': 'active',
-  //       'bookings': 15,
-  //       'joined': '2024-01-10',
-  //     },
-  //     {
-  //       'id': 4,
-  //       'name': 'Alice Brown',
-  //       'email': 'alice.brown@example.com',
-  //       'status': 'inactive',
-  //       'bookings': 3,
-  //       'joined': '2024-11-05',
-  //     },
-  //     {
-  //       'id': 5,
-  //       'name': 'Charlie Davis',
-  //       'email': 'charlie.davis@example.com',
-  //       'status': 'active',
-  //       'bookings': 20,
-  //       'joined': '2023-12-01',
-  //     },
-  //     {
-  //       'id': 6,
-  //       'name': 'Diana Miller',
-  //       'email': 'diana.miller@example.com',
-  //       'status': 'active',
-  //       'bookings': 6,
-  //       'joined': '2024-03-15',
-  //     },
-  //   ];
-  // }
 
   List<Map<String, dynamic>> _getActiveUsers() {
     return users.where((u) => u['status'] == 'active').toList();

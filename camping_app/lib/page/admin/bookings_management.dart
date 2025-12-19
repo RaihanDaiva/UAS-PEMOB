@@ -1,22 +1,54 @@
 import 'package:flutter/material.dart';
+import '../../services/api_admin_services.dart';
+import '../admin/booking_detail.dart';
 
 class BookingsManagementScreen extends StatefulWidget {
   final VoidCallback onBack;
-  const BookingsManagementScreen({Key? key, required this.onBack}) : super(key: key);
+  const BookingsManagementScreen({Key? key, required this.onBack})
+    : super(key: key);
 
   @override
-  State<BookingsManagementScreen> createState() => _BookingsManagementScreenState();
+  State<BookingsManagementScreen> createState() =>
+      _BookingsManagementScreenState();
 }
 
 class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
   String searchQuery = '';
   String filterStatus = 'all';
 
+  List<Map<String, dynamic>> _bookings = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchBookings();
+  }
+
+  Future<void> _fetchBookings() async {
+    setState(() => _loading = true);
+
+    try {
+      final data = await apiService.getAllBookings(
+        status: filterStatus == 'all' ? null : filterStatus,
+      );
+
+      setState(() {
+        _bookings = List<Map<String, dynamic>>.from(data);
+        _loading = false;
+      });
+    } catch (e) {
+      debugPrint(e.toString());
+      setState(() => _loading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bookings = _getFilteredBookings();
+    final filteredBookings = _filteredBookings;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF9FAFB),
       body: Column(
         children: [
           // Header with Search
@@ -48,7 +80,7 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
                             ),
                           ),
                           Text(
-                            '${_getAllBookings().length} total bookings',
+                            '${_bookings.length} total bookings',
                             style: const TextStyle(
                               color: Color(0xFFDBEAFE),
                               fontSize: 14,
@@ -67,14 +99,20 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
                   decoration: InputDecoration(
                     hintText: 'Search by ID, user, or campsite...',
                     hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
-                    prefixIcon: const Icon(Icons.search, color: Color(0xFF9CA3AF)),
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      color: Color(0xFF9CA3AF),
+                    ),
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                 ),
               ],
@@ -83,6 +121,7 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
 
           // Filter Tabs
           Container(
+            
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -102,11 +141,16 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
 
           // Bookings List
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              itemCount: bookings.length,
-              itemBuilder: (context, index) => _buildBookingCard(bookings[index]),
-            ),
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : filteredBookings.isEmpty
+                ? const Center(child: Text('No bookings found'))
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    itemCount: filteredBookings.length,
+                    itemBuilder: (context, index) =>
+                        _buildBookingCard(filteredBookings[index]),
+                  ),
           ),
         ],
       ),
@@ -116,7 +160,12 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
   Widget _buildFilterChip(String label, String value) {
     final isActive = filterStatus == value;
     return GestureDetector(
-      onTap: () => setState(() => filterStatus = value),
+      onTap: () {
+        if (filterStatus == value) return;
+        setState(() => filterStatus = value);
+        _fetchBookings();
+      },
+
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
@@ -143,16 +192,12 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -165,7 +210,7 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Booking ID: ${booking['id']}',
+                          'Booking Code: ${booking['booking_code'] ?? '-'}',
                           style: const TextStyle(
                             fontSize: 12,
                             color: Color(0xFF6B7280),
@@ -173,7 +218,7 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          booking['campsite'],
+                          booking['campsite_name']?.toString() ?? '-',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -181,24 +226,19 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
                         ),
                       ],
                     ),
-                    _buildStatusBadge(booking['status']),
+                    _buildStatusBadge(booking['booking_status']),
                   ],
                 ),
                 const SizedBox(height: 12),
-                // User Info
-                _buildInfoRow(Icons.person_outline, booking['userName']),
-                const SizedBox(height: 8),
-                _buildInfoRow(Icons.location_on_outlined, booking['location']),
-                const SizedBox(height: 8),
                 _buildInfoRow(
                   Icons.calendar_today_outlined,
-                  '${booking['checkIn']} → ${booking['checkOut']}',
+                  '${booking['check_in_date']} → ${booking['check_out_date']}',
                 ),
               ],
             ),
           ),
 
-          // Details Section
+          // Detail bawah
           Container(
             padding: const EdgeInsets.all(16),
             decoration: const BoxDecoration(
@@ -216,7 +256,7 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
                     Row(
                       children: [
                         Text(
-                          '${booking['tents']} Tents',
+                          '${booking['num_tents'] ?? 0} Tents',
                           style: const TextStyle(
                             fontSize: 14,
                             color: Color(0xFF6B7280),
@@ -224,7 +264,7 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
                         ),
                         const SizedBox(width: 16),
                         Text(
-                          '${booking['guests']} Guests',
+                          '${booking['num_people'] ?? 0} Guests',
                           style: const TextStyle(
                             fontSize: 14,
                             color: Color(0xFF6B7280),
@@ -232,7 +272,6 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
                         ),
                       ],
                     ),
-                    _buildPaymentBadge(booking['paymentStatus']),
                   ],
                 ),
                 const Divider(height: 24),
@@ -247,7 +286,7 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
                           size: 20,
                         ),
                         Text(
-                          'Rp ${_formatPrice(booking['total'])}',
+                          'Rp ${_formatPrice((booking['total_price'] ?? 0).toInt())}',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -257,23 +296,22 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
                       ],
                     ),
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                BookingDetailScreen(bookingId: booking['id']),
+                          ),
+                        );
+                      },
+
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFEFF6FF),
                         foregroundColor: const Color(0xFF2563EB),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
                         elevation: 0,
                       ),
-                      child: const Text(
-                        'View Details',
-                        style: TextStyle(fontSize: 14),
-                      ),
+                      child: const Text('View Details'),
                     ),
                   ],
                 ),
@@ -293,10 +331,7 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF6B7280),
-            ),
+            style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
           ),
         ),
       ],
@@ -398,100 +433,22 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
 
   String _formatPrice(int price) {
     return price.toString().replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]}.',
-        );
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]}.',
+    );
   }
 
-  List<Map<String, dynamic>> _getAllBookings() {
-    return [
-      {
-        'id': 'BK001',
-        'campsite': 'Green Valley Camp',
-        'location': 'Bandung',
-        'userName': 'John Doe',
-        'checkIn': '2025-12-20',
-        'checkOut': '2025-12-22',
-        'tents': 2,
-        'guests': 4,
-        'total': 330000,
-        'status': 'confirmed',
-        'paymentStatus': 'paid',
-      },
-      {
-        'id': 'BK002',
-        'campsite': 'Mountain Peak Resort',
-        'location': 'Bogor',
-        'userName': 'Jane Smith',
-        'checkIn': '2025-12-22',
-        'checkOut': '2025-12-24',
-        'tents': 1,
-        'guests': 2,
-        'total': 440000,
-        'status': 'pending',
-        'paymentStatus': 'pending',
-      },
-      {
-        'id': 'BK003',
-        'campsite': 'Lakeside Paradise',
-        'location': 'Cianjur',
-        'userName': 'Bob Wilson',
-        'checkIn': '2025-12-19',
-        'checkOut': '2025-12-21',
-        'tents': 3,
-        'guests': 6,
-        'total': 1155000,
-        'status': 'confirmed',
-        'paymentStatus': 'paid',
-      },
-      {
-        'id': 'BK004',
-        'campsite': 'Sunset Beach Camp',
-        'location': 'Pelabuhan Ratu',
-        'userName': 'Alice Brown',
-        'checkIn': '2025-12-21',
-        'checkOut': '2025-12-23',
-        'tents': 2,
-        'guests': 4,
-        'total': 396000,
-        'status': 'confirmed',
-        'paymentStatus': 'paid',
-      },
-      {
-        'id': 'BK005',
-        'campsite': 'Green Valley Camp',
-        'location': 'Bandung',
-        'userName': 'Charlie Davis',
-        'checkIn': '2025-12-23',
-        'checkOut': '2025-12-25',
-        'tents': 1,
-        'guests': 2,
-        'total': 165000,
-        'status': 'cancelled',
-        'paymentStatus': 'refunded',
-      },
-    ];
-  }
+  List<Map<String, dynamic>> get _filteredBookings {
+    var result = List<Map<String, dynamic>>.from(_bookings);
 
-  List<Map<String, dynamic>> _getFilteredBookings() {
-    var bookings = _getAllBookings();
-
-    // Filter by status
-    if (filterStatus != 'all') {
-      bookings = bookings.where((b) => b['status'] == filterStatus).toList();
-    }
-
-    // Filter by search query
     if (searchQuery.isNotEmpty) {
-      bookings = bookings.where((b) {
-        final id = b['id'].toString().toLowerCase();
-        final user = b['userName'].toString().toLowerCase();
-        final campsite = b['campsite'].toString().toLowerCase();
-        final query = searchQuery.toLowerCase();
-        return id.contains(query) || user.contains(query) || campsite.contains(query);
+      final q = searchQuery.toLowerCase();
+      result = result.where((b) {
+        return b['booking_code'].toString().contains(q) ||
+            b['campsite_name'].toString().toLowerCase().contains(q);
       }).toList();
     }
 
-    return bookings;
+    return result;
   }
 }

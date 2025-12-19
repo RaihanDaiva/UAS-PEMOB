@@ -13,7 +13,7 @@ class ApiService {
 
   // Alternative base URLs (uncomment the one you need):
   static const String baseUrl =
-      'http://192.168.100.6:5000/api'; // Physical device
+      'http://192.168.100.21:5000/api'; // Physical device
   // static const String baseUrl = 'http://localhost:5000/api'; // iOS Simulator
 
   String? _token;
@@ -272,7 +272,7 @@ class ApiService {
     String? dateFrom,
   }) async {
     try {
-      var url = '$baseUrl/admin/bookings';
+      var url = '$baseUrl/bookings/bookings-list';
       final queryParams = <String, String>{};
 
       if (status != null) queryParams['status'] = status;
@@ -293,6 +293,61 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Get bookings error: $e');
+    }
+  }
+
+  /// Get total bookings (admin)
+  Future<int> getTotalBookings() async {
+    try {
+      final url = Uri.parse('$baseUrl/admin/bookings/total');
+      final response = await http.get(url, headers: _getHeaders());
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        return data['total_bookings'];
+      } else {
+        throw Exception(data['message'] ?? 'Failed to get total bookings');
+      }
+    } catch (e) {
+      throw Exception('Get total bookings error: $e');
+    }
+  }
+
+  /// Get today's bookings (admin)
+  Future<int> getTodayBookings() async {
+    try {
+      final url = Uri.parse('$baseUrl/admin/bookings/today');
+      final response = await http.get(url, headers: _getHeaders());
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        return data['total_today_bookings'];
+      } else {
+        throw Exception(data['message'] ?? 'Failed to get today bookings');
+      }
+    } catch (e) {
+      throw Exception('Get today bookings error: $e');
+    }
+  }
+
+  /// Get booking detail by ID
+  Future<Map<String, dynamic>> getBookingDetail(int bookingId) async {
+    try {
+      final url = '$baseUrl/admin/bookings/$bookingId';
+
+      final response = await http.get(Uri.parse(url), headers: _getHeaders());
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        return Map<String, dynamic>.from(data['booking']);
+      } else {
+        throw Exception(data['message'] ?? 'Failed to get booking detail');
+      }
+    } catch (e) {
+      throw Exception('Get booking detail error: $e');
     }
   }
 

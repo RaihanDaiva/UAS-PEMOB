@@ -24,6 +24,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int totalPendingUsers = 0;
   bool loadingPending = true;
 
+  int totalBookings = 0;
+  bool loadingBookings = true;
+
+  int todayBookings = 0;
+  bool loadingTodayBookings = true;
+
   Timer? _refreshTimer; // Tambahkan variabel timer
 
   @override
@@ -46,6 +52,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     fetchTotalUsers();
     fetchTotalCampsites();
     fetchTotalPendingUsers();
+    fetchTotalBookings();
+    fetchTodayBookings();
   }
 
   Future<void> fetchTotalUsers() async {
@@ -89,6 +97,36 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       debugPrint('Fetch pending users error: $e');
       setState(() {
         loadingPending = false;
+      });
+    }
+  }
+
+  Future<void> fetchTotalBookings() async {
+    try {
+      final count = await apiService.getTotalBookings();
+      setState(() {
+        totalBookings = count;
+        loadingBookings = false;
+      });
+    } catch (e) {
+      debugPrint('Fetch total bookings error: $e');
+      setState(() {
+        loadingBookings = false;
+      });
+    }
+  }
+
+  Future<void> fetchTodayBookings() async {
+    try {
+      final count = await apiService.getTodayBookings();
+      setState(() {
+        todayBookings = count;
+        loadingTodayBookings = false;
+      });
+    } catch (e) {
+      debugPrint('Fetch today bookings error: $e');
+      setState(() {
+        loadingTodayBookings = false;
       });
     }
   }
@@ -170,7 +208,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         Expanded(
                           child: _buildQuickStat(
                             "Today's Bookings",
-                            '12',
+                            loadingTodayBookings
+                                ? '...'
+                                : todayBookings.toString(),
                             Colors.green,
                             Icons.trending_up,
                           ),
@@ -203,7 +243,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       _buildStatCard(
                         Icons.calendar_today,
                         'Total Bookings',
-                        '156',
+                        loadingBookings ? '...' : totalBookings.toString(),
                         Colors.blue,
                       ),
                       _buildStatCard(

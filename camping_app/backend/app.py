@@ -13,7 +13,7 @@ import os
 app = Flask(__name__)
 
 # Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/camping_booking_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:raihan123@localhost/camping_booking_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = 'mysecret'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=7)
@@ -685,6 +685,91 @@ def get_bookings_list():
         
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+    
+@app.route('/api/admin/bookings/total', methods=['GET'])
+@jwt_required()
+def get_total_bookings():
+    try:
+        claims = get_jwt()
+
+        if claims.get('role') != 'admin':
+            return jsonify({
+                'success': False,
+                'message': 'Access denied. Admin only.'
+            }), 403
+
+        total_bookings = Booking.query.count()
+
+        return jsonify({
+            'success': True,
+            'total_bookings': total_bookings
+        }), 200
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+from datetime import datetime, date
+
+@app.route('/api/admin/bookings/today', methods=['GET'])
+@jwt_required()
+def get_today_bookings():
+    try:
+        claims = get_jwt()
+
+        if claims.get('role') != 'admin':
+            return jsonify({
+                'success': False,
+                'message': 'Access denied. Admin only.'
+            }), 403
+
+        today = date.today()
+
+        total_today_bookings = Booking.query.filter(
+            db.func.date(Booking.created_at) == today
+        ).count()
+
+        return jsonify({
+            'success': True,
+            'total_today_bookings': total_today_bookings
+        }), 200
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    
+@app.route('/api/admin/bookings/<int:booking_id>', methods=['GET'])
+@jwt_required()
+def get_booking_detail(booking_id):
+    booking = Booking.query.filter_by(id=booking_id).first()
+
+    if not booking:
+        return jsonify({
+            'success': False,
+            'message': 'Booking not found'
+        }), 404
+
+    return jsonify({
+        'success': True,
+        'booking': {
+            'id': booking.id,
+            'booking_code': booking.booking_code,
+            'booking_status': booking.booking_status,
+            'campsite_id': booking.campsite_id,
+            'campsite_name': booking.campsite.name,
+            'check_in_date': booking.check_in_date.strftime('%Y-%m-%d'),
+            'check_out_date': booking.check_out_date.strftime('%Y-%m-%d'),
+            'num_people': booking.num_people,
+            'num_tents': booking.num_tents,
+            'price_per_night': booking.price_per_night,
+            'total_nights': booking.total_nights,
+            'subtotal': booking.subtotal,
+            'tax_amount': booking.tax_amount,
+            'total_price': booking.total_price,
+            'special_requests': booking.special_requests,
+            'created_at': booking.created_at.isoformat()
+        }
+    }), 200
+
+
 
 # ============================================
 # ADMIN ROUTES
