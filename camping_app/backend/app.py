@@ -261,6 +261,104 @@ def get_campsites():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
+@app.route('/api/admin/campsites', methods=['POST'])
+@jwt_required()
+def create_campsite():
+    try:
+        user = User.query.get(get_jwt_identity())
+        if user.role != 'admin':
+            return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+        data = request.get_json()
+
+        campsite = Campsite(
+            name=data['name'],
+            description=data.get('description'),
+            location_name=data['location_name'],
+            latitude=data['latitude'],
+            longitude=data['longitude'],
+            capacity=data['capacity'],
+            price_per_night=data['price_per_night'],
+            facilities=data.get('facilities'),
+            image_url=data.get('image_url'),
+            is_active=True
+        )
+
+        db.session.add(campsite)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Campsite created',
+            'campsite': campsite.to_dict()
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/admin/campsites/<int:campsite_id>', methods=['PUT'])
+@jwt_required()
+def update_campsite(campsite_id):
+    try:
+        user = User.query.get(get_jwt_identity())
+        if user.role != 'admin':
+            return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+        campsite = Campsite.query.get(campsite_id)
+        if not campsite:
+            return jsonify({'success': False, 'message': 'Not found'}), 404
+
+        data = request.get_json()
+
+        campsite.name = data.get('name', campsite.name)
+        campsite.description = data.get('description', campsite.description)
+        campsite.location_name = data.get('location_name', campsite.location_name)
+        campsite.latitude = data.get('latitude', campsite.latitude)
+        campsite.longitude = data.get('longitude', campsite.longitude)
+        campsite.capacity = data.get('capacity', campsite.capacity)
+        campsite.price_per_night = data.get('price_per_night', campsite.price_per_night)
+        campsite.facilities = data.get('facilities', campsite.facilities)
+        campsite.image_url = data.get('image_url', campsite.image_url)
+        campsite.is_active = data.get('is_active', campsite.is_active)
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Campsite updated',
+            'campsite': campsite.to_dict()
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/admin/campsites/<int:campsite_id>', methods=['DELETE'])
+@jwt_required()
+def delete_campsite(campsite_id):
+    try:
+        user = User.query.get(get_jwt_identity())
+        if user.role != 'admin':
+            return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+        campsite = Campsite.query.get(campsite_id)
+        if not campsite:
+            return jsonify({'success': False, 'message': 'Not found'}), 404
+
+        campsite.is_active = False
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Campsite deactivated'
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 @app.route('/api/admin/campsites/total', methods=['GET'])
 @jwt_required()
 def get_total_campsites():
