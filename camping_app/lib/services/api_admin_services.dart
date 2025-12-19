@@ -166,6 +166,24 @@ class ApiService {
     }
   }
 
+  Future<int> getTotalPendingUsers() async {
+    try {
+      final url = Uri.parse('$baseUrl/admin/users/pending');
+
+      final response = await http.get(url, headers: _getHeaders());
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        return (data['pending_users'] as List).length;
+      } else {
+        throw Exception(data['message'] ?? 'Failed to get pending users');
+      }
+    } catch (e) {
+      throw Exception('Get pending users error: $e');
+    }
+  }
+
   /// Approve or reject user
   Future<Map<String, dynamic>> approveRejectUser(
     int userId,

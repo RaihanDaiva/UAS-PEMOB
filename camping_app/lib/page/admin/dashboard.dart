@@ -21,6 +21,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int totalCampsites = 0;
   bool loadingCampsites = true;
 
+  int totalPendingUsers = 0;
+  bool loadingPending = true;
+
   Timer? _refreshTimer; // Tambahkan variabel timer
 
   @override
@@ -42,6 +45,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   void fetchAllStats() {
     fetchTotalUsers();
     fetchTotalCampsites();
+    fetchTotalPendingUsers();
   }
 
   Future<void> fetchTotalUsers() async {
@@ -70,6 +74,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       debugPrint('Fetch total campsites error: $e');
       setState(() {
         loadingCampsites = false;
+      });
+    }
+  }
+
+  Future<void> fetchTotalPendingUsers() async {
+    try {
+      final count = await apiService.getTotalPendingUsers();
+      setState(() {
+        totalPendingUsers = count;
+        loadingPending = false;
+      });
+    } catch (e) {
+      debugPrint('Fetch pending users error: $e');
+      setState(() {
+        loadingPending = false;
       });
     }
   }
@@ -140,7 +159,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         Expanded(
                           child: _buildQuickStat(
                             'Pending Approval',
-                            '5',
+                            loadingPending
+                                ? '...'
+                                : totalPendingUsers.toString(),
                             Colors.yellow.shade700,
                             Icons.warning_amber,
                           ),
@@ -218,11 +239,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     _buildMenuItem(
                       icon: Icons.how_to_reg,
                       title: 'Pending User Approvals',
-                      subtitle: '5 users waiting',
+                      subtitle: loadingPending
+                          ? 'Loading...'
+                          : '$totalPendingUsers users waiting',
                       color: Colors.yellow.shade700,
-                      badge: '5',
+                      badge: loadingPending
+                          ? null
+                          : totalPendingUsers.toString(),
                       onTap: () => widget.onNavigate(AdminScreen.approvals),
                     ),
+
                     const SizedBox(height: 12),
                     _buildMenuItem(
                       icon: Icons.people,
