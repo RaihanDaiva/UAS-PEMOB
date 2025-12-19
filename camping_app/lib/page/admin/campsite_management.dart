@@ -19,6 +19,8 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
   int? editingCampsiteId;
 
   bool showAddForm = false;
+  bool isEditing = false;
+  int editedId = 0;
   final TextEditingController nameController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController locationController = TextEditingController();
@@ -339,7 +341,9 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                                 imageUrlController.text =
                                     campsite.imageUrl ?? '';
 
+                                editedId = campsite.id;
                                 showAddForm = true;
+                                isEditing = true;
                                 setState(() {});
                               },
                               padding: const EdgeInsets.all(8),
@@ -578,9 +582,14 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                           print("<=== FORM DATA CAMPSITE ===>");
 
                           try {
-                            await apiService.createCampsite(campsiteData);
+                            if(!isEditing) {
+                              await apiService.createCampsite(campsiteData);
+                            } else {
+                              await apiService.updateCampsite(editedId, campsiteData);
+                              editedId = 0;
+                              isEditing = false;
+                            }
 
-                            Navigator.pop(context); // close modal
 
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -589,6 +598,10 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                             );
 
                             // OPTIONAL: refresh list here
+                            // Navigator.pop(context); // close modal
+                            _clearForm();
+                            _loadCampsites();
+                            setState(() => showAddForm = false);
                           } catch (e) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text(e.toString())),
@@ -607,7 +620,7 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                           ),
                           elevation: 0,
                         ),
-                        child: const Text('Add Campsite'),
+                        child: Text(isEditing ? 'Edit Campsite' : 'Add Campsite'),
                       ),
                     ),
                   ],
