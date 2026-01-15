@@ -63,13 +63,19 @@ class Campsite {
   }
 
   String get formattedPrice {
-    return 'Rp ${pricePerNight.toStringAsFixed(0).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), 
-      (Match m) => '${m[1]}.'
-    )}';
+    return 'Rp ${pricePerNight.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
   }
 
   List<String> get facilitiesList {
-    return facilities.split(',').map((e) => e.trim()).toList();
+    if (facilities.isEmpty) return [];
+    return facilities
+        .split(',') // Pecah berdasarkan koma
+        .map((e) => e.trim()) // Hapus spasi
+        .where((e) => e.isNotEmpty) // Filter yang kosong
+        .toList();
   }
+
+  String get location => locationName;
+
+  String get displayImageUrl => imageUrl ?? '';
 }
