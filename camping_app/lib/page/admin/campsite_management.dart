@@ -1,3 +1,4 @@
+import 'package:camping_app/page/admin/campsite_details_page.dart';
 import 'package:flutter/material.dart';
 import '../../services/storage_services.dart'; // your provided storage helper
 import '../../models/campsite.dart';
@@ -397,6 +398,29 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                         ],
                       ),
                     ],
+                  ),
+                  ElevatedButton(
+                    child: const Text('Detail'),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CampsiteDetailsPage(
+                            campsite: campsite,
+                            onBookNow: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Booking feature coming soon'),
+                                ),
+                              );
+                            },
+                            onViewWeather: () {
+                              // This will be handled inside detail page
+                            },
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),

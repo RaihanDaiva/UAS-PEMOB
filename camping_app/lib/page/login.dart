@@ -6,7 +6,7 @@ import '../page/register.dart';
 import 'admin_app.dart';
 
 // COLORS
-const Color primaryGreen = Color(0xFF0BA84A);
+const Color primaryGreen = Color(0xFF2563EB);
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -87,13 +87,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 24),
                 _submitButton('Sign In', login),
                 const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                  ),
-                  child: const Text("Don't have an account? Sign Up"),
-                ),
               ],
             ),
           ],

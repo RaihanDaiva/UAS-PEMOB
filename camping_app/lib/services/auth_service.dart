@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:camping_app/services/api_admin_services.dart';
 import 'package:http/http.dart' as http;
 
-const String baseUrl = 'http://192.168.1.75:5000'; // Punya Raihan
+const String baseUrl = 'http://192.168.1.12:5000'; // Punya Raihan
 // const String baseUrl = 'http://192.168.1.10:5000'; // Punya Piw
 
 class AuthService {
@@ -47,5 +47,27 @@ class AuthService {
         'password': password,
       }),
     );
+  }
+
+  Future<void> logout() async {
+    try {
+      // Optional: Call logout endpoint if your backend has one
+      if (_token != null) {
+        await http.post(
+          Uri.parse('$baseUrl/api/auth/logout'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $_token',
+          },
+        );
+      }
+    } catch (e) {
+      // Continue with logout even if API call fails
+      print('Logout API error: $e');
+    } finally {
+      // Clear local token regardless of API response
+      _token = null;
+      apiService.setToken('');
+    }
   }
 }

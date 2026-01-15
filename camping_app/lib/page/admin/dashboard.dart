@@ -1,6 +1,8 @@
+import 'package:camping_app/page/login.dart';
 import 'package:flutter/material.dart';
 import '../admin_app.dart';
 import '../../services/api_admin_services.dart';
+import '../../services/auth_service.dart'; // Add this import
 import 'dart:async';
 
 // AdminDashboardScreen
@@ -30,13 +32,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int todayBookings = 0;
   bool loadingTodayBookings = true;
 
-  Timer? _refreshTimer; // Tambahkan variabel timer
+  Timer? _refreshTimer;
+  final AuthService _authService = AuthService(); // Add this
 
   @override
   void initState() {
     super.initState();
     fetchAllStats();
-    // Set timer untuk auto-refresh setiap 30 detik
     _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       fetchAllStats();
     });
@@ -44,7 +46,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   void dispose() {
-    _refreshTimer?.cancel(); // Pastikan timer dibersihkan
+    _refreshTimer?.cancel();
     super.dispose();
   }
 
@@ -131,6 +133,69 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
   }
 
+  // 🔥 ADD LOGOUT FUNCTION
+  Future<void> _handleLogout() async {
+    // Show confirmation dialog
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout == true && mounted) {
+      try {
+        // Show loading
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
+        );
+
+        // Perform logout
+        await _authService.logout();
+
+        if (mounted) {
+          // Pop loading dialog
+          Navigator.pop(context);
+
+          // Navigate to login screen
+          // Navigator.pushReplacementNamed(context, '/login');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          // Pop loading dialog
+          Navigator.pop(context);
+
+          // Show error
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Logout failed: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -176,6 +241,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               ),
                             ),
                           ],
+                        ),
+                        // 🔥 ADD LOGOUT BUTTON HERE
+                        IconButton(
+                          onPressed: _handleLogout,
+                          icon: const Icon(Icons.logout),
+                          color: Colors.white,
+                          tooltip: 'Logout',
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.white.withOpacity(0.2),
+                          ),
                         ),
                       ],
                     ),
@@ -240,12 +315,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         loadingCampsites ? '...' : totalCampsites.toString(),
                         Colors.purple,
                       ),
-                      // _buildStatCard(
-                      //   Icons.attach_money,
-                      //   'Revenue',
-                      //   '45M',
-                      //   Colors.yellow.shade700,
-                      // ),
                     ],
                   ),
                 ),
@@ -357,7 +426,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     Color color,
   ) {
     return Container(
-      padding: const EdgeInsets.all(10), // default: 16
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
