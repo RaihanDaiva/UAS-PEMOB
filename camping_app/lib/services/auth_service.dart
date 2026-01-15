@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:camping_app/services/api_admin_services.dart';
 import 'package:http/http.dart' as http;
 
-const String baseUrl = 'http://192.168.100.30:5000'; // Punya Raihan
+const String baseUrl = 'http://192.168.1.75:5000'; // Punya Raihan
 // const String baseUrl = 'http://192.168.1.10:5000'; // Punya Piw
 
 class AuthService {

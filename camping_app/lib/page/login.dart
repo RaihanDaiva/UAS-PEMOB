@@ -4,7 +4,6 @@ import '../services/auth_service.dart';
 import '../services/api_admin_services.dart';
 import '../page/register.dart';
 import 'admin_app.dart';
-import 'client_app.dart';
 
 // COLORS
 const Color primaryGreen = Color(0xFF0BA84A);
@@ -58,12 +57,8 @@ class _LoginScreenState extends State<LoginScreen> {
           context,
           MaterialPageRoute(builder: (_) => const AdminApp()),
         );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const ClientApp()),
-        );
-      }
+      } 
+      
     } catch (e) {
       ScaffoldMessenger.of(
         context,
