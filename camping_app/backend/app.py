@@ -15,6 +15,8 @@ app = Flask(__name__)
 
 # Configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/camping_booking_db'
+# Struktur: 'mysql+pymysql://{username}:{password}@{host}/{database_name}'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = 'mysecret'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=7)
@@ -133,10 +135,12 @@ class Booking(db.Model):
         }
 
 # ============================================
-# AUTHENTICATION ROUTES
+# 1. AUTHENTICATION ROUTES
 # ============================================
 
+# 1.1 Register new client user (registration status: pending)
 @app.route('/api/auth/register', methods=['POST'])
+# No jwt_required() or authentication needed since here for registration
 def register():
     try:
         data = request.get_json()
@@ -178,7 +182,9 @@ def register():
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
 
+# 1.2 Login for both Admin and Client
 @app.route('/api/auth/login', methods=['POST'])
+# No jwt_required() or authentication needed here since it's login
 def login():
     try:
         data = request.get_json()
@@ -226,10 +232,12 @@ def login():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
+# 1.3 Get logged in user profile information [by user_id from JWT]
 @app.route('/api/auth/profile', methods=['GET'])
-@jwt_required()
+@jwt_required() # Authentication required
 def get_profile():
     try:
+        # Read identity from JWT
         user_id = get_jwt_identity()
         user = User.query.get(user_id)
         
@@ -245,15 +253,15 @@ def get_profile():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 # ============================================
-# CAMPSITE ROUTES
+# 2. CAMPSITE ROUTES
 # ============================================
 
+# 2.1 Get list of all active campsites (not active campsites are hidden)
 @app.route('/api/campsites', methods=['GET'])
-@jwt_required(optional=True)
+@jwt_required(optional=True) # Whether logged in or not, can access and will result the same output
 def get_campsites():
     try:
-        campsites = Campsite.query.filter_by(is_active=True).all()
-        
+        campsites = Campsite.query.filter_by(is_active=True).all() # Only active campsites
         return jsonify({
             'success': True,
             'campsites': [campsite.to_dict() for campsite in campsites]
@@ -262,11 +270,33 @@ def get_campsites():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
+# 2.2 Get detailed information of a specific campsite [by campsite_id]
+@app.route('/api/campsites/<int:campsite_id>', methods=['GET'])
+@jwt_required(optional=True) # Whether logged in or not, can access and will result the same output
+def get_campsite_detail(campsite_id):
+    try:
+        campsite = Campsite.query.get(campsite_id)
+        
+        if not campsite:
+            return jsonify({'success': False, 'message': 'Campsite not found'}), 404
+        
+        return jsonify({
+            'success': True,
+            'campsite': campsite.to_dict()
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# 2.3 Create a new campsite (admin only)
 @app.route('/api/admin/campsites', methods=['POST'])
-@jwt_required()
+@jwt_required() # Admin authentication required
 def create_campsite():
     try:
+        # Read identity from JWT
         user = User.query.get(get_jwt_identity())
+        
+        # Admin check
         if user.role != 'admin':
             return jsonify({'success': False, 'message': 'Unauthorized'}), 403
 
@@ -298,11 +328,15 @@ def create_campsite():
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
 
+# 2.4 Update an existing campsite (admin only) [by campsite_id]
 @app.route('/api/admin/campsites/<int:campsite_id>', methods=['PUT'])
-@jwt_required()
+@jwt_required() # Admin authentication required
 def update_campsite(campsite_id):
     try:
+        # Read identity from JWT
         user = User.query.get(get_jwt_identity())
+
+        # Admin check
         if user.role != 'admin':
             return jsonify({'success': False, 'message': 'Unauthorized'}), 403
 
@@ -335,11 +369,15 @@ def update_campsite(campsite_id):
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
 
+# 2.5 Delete (deactivate, not delete fully) a campsite (admin only) [by campsite_id]
 @app.route('/api/admin/campsites/<int:campsite_id>', methods=['DELETE'])
-@jwt_required()
+@jwt_required() # Admin authentication required
 def delete_campsite(campsite_id):
     try:
+        # Read identity from JWT
         user = User.query.get(get_jwt_identity())
+       
+        # Admin check
         if user.role != 'admin':
             return jsonify({'success': False, 'message': 'Unauthorized'}), 403
 
@@ -347,8 +385,9 @@ def delete_campsite(campsite_id):
         if not campsite:
             return jsonify({'success': False, 'message': 'Not found'}), 404
 
-        campsite.is_active = False
-        db.session.commit()
+        campsite.is_active = False # Soft delete by deactivating (it's not removed from DB or deleted fully)
+        db.session.commit() # Commit the change to the database
+        # Purposely not deleting fully to preserve historical booking data and integrity
 
         return jsonify({
             'success': True,
@@ -359,18 +398,20 @@ def delete_campsite(campsite_id):
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
 
-
+# 2.6 Get total number of active campsites (admin only)
 @app.route('/api/admin/campsites/total', methods=['GET'])
-@jwt_required()
+@jwt_required() # Admin authentication required
 def get_total_campsites():
     try:
+        # Read identity from JWT
         user_id = get_jwt_identity()
         user = User.query.get(user_id)
-        # Hanya admin yang boleh akses
+
+        # Admin check
         if user.role != 'admin':
             return jsonify({'success': False, 'message': 'Unauthorized'}), 403
 
-        total_campsites = Campsite.query.filter_by(is_active=True).count()
+        total_campsites = Campsite.query.filter_by(is_active=True).count() # Only count active campsites
         return jsonify({
             'success': True,
             'total_campsites': total_campsites
@@ -378,32 +419,16 @@ def get_total_campsites():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
-@app.route('/api/campsites/<int:campsite_id>', methods=['GET'])
-@jwt_required()
-def get_campsite_detail(campsite_id):
-    try:
-        campsite = Campsite.query.get(campsite_id)
-        
-        if not campsite:
-            return jsonify({'success': False, 'message': 'Campsite not found'}), 404
-        
-        return jsonify({
-            'success': True,
-            'campsite': campsite.to_dict()
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
-
 # ============================================
-# WEATHER ROUTES
+# 3. WEATHER ROUTES
 # ============================================
 
 import requests
 from datetime import datetime, timedelta
 
+# 3.1 Get weather forecast for a campsite location (also uses free Public API) [by campsite_id]
 @app.route('/api/weather/forecast', methods=['GET'])
-@jwt_required()
+@jwt_required() # Authentication or login required
 def get_weather_forecast():
     """
     Get weather forecast for a campsite location
@@ -440,7 +465,7 @@ def get_weather_forecast():
         print(f"   Location: {float(campsite.latitude)}, {float(campsite.longitude)}")
         print(f"   Days: {days}")
         
-        # Call Open-Meteo API (Free weather API, no key needed)
+        # Call Open-Meteo API (Free weather Public API, no key or auth needed)
         weather_api_url = "https://api.open-meteo.com/v1/forecast"
         params = {
             'latitude': float(campsite.latitude),
@@ -616,7 +641,7 @@ def get_weather_recommendation(forecast):
         return "Not recommended for camping. Consider rescheduling."
 
 # ============================================
-# BOOKING ROUTES
+# 4. BOOKING ROUTES
 # ============================================
 
 from datetime import date
@@ -630,10 +655,12 @@ def generate_booking_code():
     random_str = ''.join(random.choices(string.digits, k=6))
     return f"BKG{date_str}{random_str}"
 
+# 4.1 Create a new campsite booking
 @app.route('/api/bookings', methods=['POST'])
-@jwt_required()
+@jwt_required() # Authentication or login required
 def create_booking():
     try:
+        # Read identity from JWT
         user_id = get_jwt_identity()
         data = request.get_json()
         
@@ -705,10 +732,12 @@ def create_booking():
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
 
+# 4.2 Get list of bookings for logged in user (client) [by user_id from JWT, by bookings]
 @app.route('/api/bookings/my-bookings', methods=['GET'])
-@jwt_required()
+@jwt_required() # Authentication or login required
 def get_my_bookings():
     try:
+        # Read identity from JWT
         user_id = get_jwt_identity()
         
         bookings = Booking.query.filter_by(user_id=user_id)\
@@ -728,14 +757,16 @@ def get_my_bookings():
         
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
-    
+
+# 4.3 Get list of all bookings for admin management (admin only)    
 @app.route('/api/bookings/bookings-list', methods=['GET'])
-@jwt_required()
+@jwt_required() # Admin authentication required
 def get_bookings_list():
     try:
+        # Read identity from JWT
         claims = get_jwt()
 
-        #  BATASI HANYA ADMIN
+        # Admin check
         if claims.get('role') != 'admin':
             return jsonify({
                 'success': False,
@@ -758,13 +789,16 @@ def get_bookings_list():
         
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
-    
+
+# 4.4 Get total count of all bookings (admin only)
 @app.route('/api/admin/bookings/total', methods=['GET'])
-@jwt_required()
+@jwt_required() # Admin authentication required
 def get_total_bookings():
     try:
+        # Read identity from JWT
         claims = get_jwt()
 
+        # Admin check
         if claims.get('role') != 'admin':
             return jsonify({
                 'success': False,
@@ -783,19 +817,22 @@ def get_total_bookings():
 
 from datetime import datetime, date
 
+# 4.5 Get total count of today's bookings (admin only) [by created_at date]
 @app.route('/api/admin/bookings/today', methods=['GET'])
-@jwt_required()
+@jwt_required() # Admin authentication required
 def get_today_bookings():
     try:
+        # Read identity from JWT
         claims = get_jwt()
 
+        # Admin check
         if claims.get('role') != 'admin':
             return jsonify({
                 'success': False,
                 'message': 'Access denied. Admin only.'
             }), 403
 
-        today = date.today()
+        today = date.today() # Get today's date
 
         total_today_bookings = Booking.query.filter(
             db.func.date(Booking.created_at) == today
@@ -808,9 +845,12 @@ def get_today_bookings():
 
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
-    
+
+# 4.6 Get detailed information of a specific booking (admin only) [by booking_id]
+# WILL COME BACK TO THIS LATER TO CHECK AGAIN OF THE USES OF THIS ROUTE WAS FOR PUBLIC OR ADMIN ONLY
+# BECAUSE IT HAS NO VERIFICATION OF USER ID OR JWT IDENTITY    
 @app.route('/api/admin/bookings/<int:booking_id>', methods=['GET'])
-@jwt_required()
+@jwt_required() # Admin authentication required
 def get_booking_detail(booking_id):
     booking = Booking.query.filter_by(id=booking_id).first()
 
@@ -842,66 +882,24 @@ def get_booking_detail(booking_id):
         }
     }), 200
 
-@app.route('/api/admin/bookings/<int:booking_id>/status', methods=['PUT'])
-@jwt_required()
-def update_booking_status(booking_id):
-    try:
-        claims = get_jwt()
-
-        # Hanya admin
-        if claims.get('role') != 'admin':
-            return jsonify({
-                'success': False,
-                'message': 'Access denied. Admin only.'
-            }), 403
-
-        booking = Booking.query.get(booking_id)
-        if not booking:
-            return jsonify({
-                'success': False,
-                'message': 'Booking not found'
-            }), 404
-
-        data = request.get_json()
-        new_status = data.get('booking_status')
-
-        # Validasi status
-        allowed_status = ['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled']
-        if new_status not in allowed_status:
-            return jsonify({
-                'success': False,
-                'message': f"Invalid status. Allowed: {', '.join(allowed_status)}"
-            }), 400
-
-        # Update
-        booking.booking_status = new_status
-        db.session.commit()
-
-        return jsonify({
-            'success': True,
-            'message': 'Booking status updated successfully',
-            'booking': booking.to_dict()
-        }), 200
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 # ============================================
-# ADMIN ROUTES
+# 5. ADMIN ROUTES
 # ============================================
 
+# 5.1 Get list of pending user registrations (admin only) [by registration_status]
 @app.route('/api/admin/users/pending', methods=['GET'])
-@jwt_required()
+@jwt_required() # Admin authentication required
 def get_pending_users():
     try:
+        # Read identity from JWT
         user_id = get_jwt_identity()
         user = User.query.get(user_id)
 
         print(get_jwt_identity)
         
-        # Check if user is admin
+        # Admin check
         if user.role != 'admin':
             return jsonify({'success': False, 'message': 'Unauthorized'}), 403
         
@@ -925,14 +923,16 @@ def get_pending_users():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
+# 5.2 Approve or reject a pending user registration (admin only) [by target_user_id]
 @app.route('/api/admin/users/<int:target_user_id>/approval', methods=['PUT'])
-@jwt_required()
+@jwt_required() # Admin authentication required
 def approve_reject_user(target_user_id):
     try:
+        # Read identity from JWT
         user_id = get_jwt_identity()
         admin = User.query.get(user_id)
         
-        # Check if user is admin
+        # Admin check
         if admin.role != 'admin':
             return jsonify({'success': False, 'message': 'Unauthorized'}), 403
         
@@ -963,14 +963,20 @@ def approve_reject_user(target_user_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
-    
+
+# 5.3 Get total count of registered users (including active and inactive) (admin only)
+# WILL COME BACK TO THIS LATER TO CONFIGURE BETWEEN ACTIVE/INACTIVE/TOTAL
+# IF NEED TO MONTIOR THE EXACT AND DETAILED AMOUNT OF USERS
+# ESPECIALLY FOR ADMIN PURPOSES AND FROM DASHBOARD VIEW
 @app.route('/api/admin/users/total', methods=['GET'])
-@jwt_required()
+@jwt_required() # Admin authentication required
 def get_total_users():
     try:
+        # Read identity from JWT
         user_id = get_jwt_identity()
         user = User.query.get(user_id)
-        # Hanya admin yang boleh akses
+
+        # Admin check
         if user.role != 'admin':
             return jsonify({'success': False, 'message': 'Unauthorized'}), 403
 
@@ -981,15 +987,18 @@ def get_total_users():
         }), 200
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
-    
+
+# 5.4 Get list of all registered users with their infos (including active and inactive) (admin only)
+# Active and inactive users included for admin monitoring
 @app.route('/api/admin/users', methods=['GET'])
-@jwt_required()
+@jwt_required() # Admin authentication required
 def get_all_users():
     try:
+        # Read identity from JWT
         user_id = get_jwt_identity()
         admin = User.query.get(user_id)
 
-        # Cek admin
+        # Admin check
         if not admin or admin.role != 'admin':
             return jsonify({
                 'success': False,
@@ -1021,13 +1030,17 @@ def get_all_users():
             'success': False,
             'message': str(e)
         }), 500
-
+    
+# 5.5 Get detailed information of a specific user (admin only) [by user_id]
 @app.route('/api/admin/users/<int:user_id>', methods=['GET'])
-@jwt_required()
+@jwt_required() # Admin authentication required
 def get_user_detail(user_id):
     try:
+        # Read identity from JWT
         admin_id = get_jwt_identity()
         admin = User.query.get(admin_id)
+
+        # Admin check
         if not admin or admin.role != 'admin':
             return jsonify({'success': False, 'message': 'Unauthorized'}), 403
 

@@ -13,8 +13,9 @@ class ApiService {
 
   // Alternative base URLs (uncomment the one you need):
   static const String baseUrl =
-      'http://192.168.100.6:5000/api'; // Physical device
-  // static const String baseUrl = 'http://localhost:5000/api'; // iOS Simulator
+      // 'http://192.168.1.12:5000/api'; // Physical device
+      // 'http://localhost:5000/api'; // iOS Simulator
+      'http://192.168.1.7:5000/api'; // Physical device Hasby Wi-Fi Hasby
 
   String? _token;
 
