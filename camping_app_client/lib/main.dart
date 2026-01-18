@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'page/login.dart'; // sesuaikan path
+import 'package:flutter/rendering.dart';
 
 void main() {
+  debugPaintSizeEnabled = false;
   runApp(const MyApp());
 }
 

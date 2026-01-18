@@ -160,10 +160,10 @@ class _PendingApprovalsScreenState extends State<PendingApprovalsScreen> {
                 child: ElevatedButton.icon(
                   onPressed: () =>
                       _handleApproval(user.id, 'approve'),
-                  icon: const Icon(Icons.check_circle, color: Colors.white),
-                  label: const Text('Approve', style: TextStyle(color: Colors.white)),
+                  icon: const Icon(Icons.check_circle, color: Color(0xFF16A34A)),
+                  label: const Text('Approve', style: TextStyle(color: Color(0xFF16A34A))),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: Color(0xFFDCFCE7),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -176,10 +176,10 @@ class _PendingApprovalsScreenState extends State<PendingApprovalsScreen> {
                 child: ElevatedButton.icon(
                   onPressed: () =>
                       _handleApproval(user.id, 'reject'),
-                  icon: const Icon(Icons.cancel, color: Colors.white,),
-                  label: const Text('Reject', style: TextStyle(color: Colors.white)),
+                  icon: const Icon(Icons.cancel, color: Color(0xFFDC2626),),
+                  label: const Text('Reject', style: TextStyle(color: Color(0xFFDC2626))),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
+                    backgroundColor: Color(0xFFFEE2E2),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

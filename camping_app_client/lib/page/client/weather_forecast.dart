@@ -337,7 +337,7 @@ class _WeatherForecastState extends State<WeatherForecast> {
             children: [
               // Date
               SizedBox(
-                width: 64,
+                width: 50,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -358,7 +358,7 @@ class _WeatherForecastState extends State<WeatherForecast> {
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 0),
 
               // Weather Icon and Condition
               Expanded(

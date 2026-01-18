@@ -286,7 +286,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
               // Main Stats
               Transform.translate(
-                offset: const Offset(0, -24),
+                offset: const Offset(0, -35),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: GridView.count(

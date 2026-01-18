@@ -94,7 +94,7 @@ class _BookingFormState extends State<BookingForm> {
         'check_out_date':
             '${checkOut.year}-${checkOut.month.toString().padLeft(2, '0')}-${checkOut.day.toString().padLeft(2, '0')}',
         'number_of_tents': tents,
-        'number_of_guests': guests,
+        'num_people': guests,
         'total_price': total,
         'payment_method': paymentMethod,
       });

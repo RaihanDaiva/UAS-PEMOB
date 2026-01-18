@@ -382,8 +382,8 @@ class _ClientProfileState extends State<ClientProfile> {
                     ),
                     const SizedBox(height: 12),
                     _buildMenuItem(
-                      Icons.help_outline,
-                      'Help & Support',
+                      Icons.info,
+                      'About',
                       const Color(0xFFF59E0B),
                       const Color(0xFFFEF3C7),
                       () {},

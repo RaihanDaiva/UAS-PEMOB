@@ -187,102 +187,111 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8),
         ],
       ),
-      child: Row(
+      child: Column(
         children: [
-          // Avatar
-          Container(
-            width: 48,
-            height: 48,
-            decoration: const BoxDecoration(
-              color: Color(0xFFF3F4F6),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.person, color: Color(0xFF9CA3AF), size: 24),
-          ),
-          const SizedBox(width: 16),
-          // User Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        user['name'],
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    Icon(
-                      isActive ? Icons.check_circle : Icons.cancel,
-                      size: 16,
-                      color: isActive ? Colors.green : Colors.red,
-                    ),
-                  ],
+          Row(
+            children: [
+              // Avatar
+              Container(
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF3F4F6),
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  user['email'],
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF6B7280),
-                  ),
-                  overflow: TextOverflow.ellipsis,
+                child: const Icon(
+                  Icons.person,
+                  color: Color(0xFF9CA3AF),
+                  size: 24,
                 ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
+              ),
+              const SizedBox(width: 16),
+              // User Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildInfoChip(
-                      isActive ? 'Active' : 'Inactive',
-                      isActive ? Colors.green : Colors.red,
-                    ),
-                    _buildInfoChip(
-                      '${user['bookings']} bookings',
-                      const Color(0xFF6B7280),
-                    ),
-                    _buildInfoChip(
-                      'Joined ${user['joined']}',
-                      const Color(0xFF6B7280),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => UserDetailScreen(
-                                userId: user['id'],
-                                onBack: () => Navigator.of(context).pop(),
-                              ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            user['name'],
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
                             ),
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF2563EB),
-                          side: const BorderSide(color: Color(0xFF2563EB)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 8),
                         ),
-                        child: const Text(
-                          'View Details',
-                          style: TextStyle(fontSize: 12),
+                        Icon(
+                          isActive ? Icons.check_circle : Icons.cancel,
+                          size: 16,
+                          color: isActive ? Colors.green : Colors.red,
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      user['email'],
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF6B7280),
                       ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        _buildInfoChip(
+                          isActive ? 'Active' : 'Inactive',
+                          isActive ? Colors.green : Colors.red,
+                        ),
+                        _buildInfoChip(
+                          '${user['bookings']} bookings',
+                          const Color(0xFF6B7280),
+                        ),
+                        _buildInfoChip(
+                          'Joined ${user['joined']}',
+                          const Color(0xFF6B7280),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => UserDetailScreen(
+                          userId: user['id'],
+                          onBack: () => Navigator.of(context).pop(),
+                        ),
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF2563EB),
+                    backgroundColor: const Color(0xFFEFF6FF),
+                    side: const BorderSide(color: Color(0xFF2563EB)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
+                  child: const Text(
+                    'View Details',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

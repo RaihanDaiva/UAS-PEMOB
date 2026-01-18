@@ -14,7 +14,7 @@ import os
 app = Flask(__name__)
 
 # Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/camping_booking_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:raihan123@localhost/camping_booking_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = 'mysecret'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=7)
@@ -370,7 +370,7 @@ def get_total_campsites():
         if user.role != 'admin':
             return jsonify({'success': False, 'message': 'Unauthorized'}), 403
 
-        total_campsites = Campsite.query.count()
+        total_campsites = Campsite.query.filter_by(is_active=True).count()
         return jsonify({
             'success': True,
             'total_campsites': total_campsites

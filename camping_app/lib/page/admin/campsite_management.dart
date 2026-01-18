@@ -1,6 +1,8 @@
 import 'package:camping_app/page/admin/campsite_details_page.dart';
 import 'package:flutter/material.dart';
-import '../../services/storage_services.dart'; // your provided storage helper
+import 'package:image_picker/image_picker.dart'; // Import Image Picker
+import 'package:http/http.dart' as http; // Import http untuk MultipartRequest
+import '../../services/storage_services.dart';
 import '../../models/campsite.dart';
 import '../../services/api_admin_services.dart';
 
@@ -68,6 +70,19 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
+
+      floatingActionButton: showAddForm
+          ? null
+          : FloatingActionButton(
+              onPressed: () {
+                editingCampsiteId = null;
+                _clearForm();
+                setState(() => showAddForm = true);
+              },
+              backgroundColor: const Color(0xFF2563EB), // Warna biru yang sama
+              child: const Icon(Icons.add, color: Colors.white),
+            ),
+
       body: Stack(
         children: [
           Column(
@@ -106,18 +121,6 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                           //   ),
                           // ),
                         ],
-                      ),
-                    ),
-                    // Add Button
-                    CircleAvatar(
-                      backgroundColor: Colors.white,
-                      child: IconButton(
-                        icon: const Icon(Icons.add, color: Color(0xFF2563EB)),
-                        onPressed: () {
-                          editingCampsiteId = null;
-                          _clearForm();
-                          setState(() => showAddForm = true);
-                        },
                       ),
                     ),
                   ],
@@ -173,7 +176,7 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
     final bool isActive = campsite.isActive;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -183,249 +186,273 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: campsite.imageUrl != null
-                  ? Image.network(
-                      campsite.imageUrl!,
-                      width: 96,
-                      height: 96,
-                      fit: BoxFit.cover,
-                    )
-                  : Container(
-                      width: 96,
-                      height: 96,
-                      color: const Color(0xFFF3F4F6),
-                      child: const Icon(Icons.image_not_supported),
-                    ),
-            ),
-            const SizedBox(width: 16),
-
-            // Info
-            Expanded(
-              child: Column(
+        child: Container(
+          // color: Colors.blue,
+          child: Column(
+            children: [
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Name + Status
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          campsite.name,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                  // Image
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: campsite.imageUrl != null
+                        ? Image.network(
+                            campsite.imageUrl!,
+                            width: 96,
+                            height: 96,
+                            fit: BoxFit.cover,
+                          )
+                        : Container(
+                            width: 96,
+                            height: 96,
+                            color: const Color(0xFFF3F4F6),
+                            child: const Icon(Icons.image_not_supported),
                           ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isActive
-                              ? const Color(0xFFDCFCE7)
-                              : const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          isActive ? 'Active' : 'Inactive',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: isActive
-                                ? const Color(0xFF16A34A)
-                                : const Color(0xFF6B7280),
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
+                  const SizedBox(width: 16),
 
-                  const SizedBox(height: 4),
-
-                  // Location
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on_outlined,
-                        size: 14,
-                        color: Color(0xFF6B7280),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          campsite.locationName,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF6B7280),
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // Rating (static / optional)
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.star,
-                        size: 14,
-                        color: Color(0xFFFBBF24),
-                      ),
-                      const SizedBox(width: 4),
-                      const Text('4.5', style: TextStyle(fontSize: 14)),
-                      const SizedBox(width: 4),
-                      const Text(
-                        '(120)',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF6B7280),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Capacity: ${campsite.capacity}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF6B7280),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Price + Actions
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        campsite.formattedPrice,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF16A34A),
-                        ),
-                      ),
-                      Row(
+                  // Info
+                  Expanded(
+                    child: Container(
+                      // color: Colors.blue,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEFF6FF),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.edit,
-                                size: 16,
-                                color: Color(0xFF2563EB),
-                              ),
-                              onPressed: () {
-                                // isi controller dari campsite
-                                nameController.text = campsite.name;
-                                locationController.text = campsite.locationName;
-                                priceController.text = campsite.pricePerNight
-                                    .toString();
-                                capacityController.text = campsite.capacity
-                                    .toString();
-                                descriptionController.text =
-                                    campsite.description ?? '';
-                                imageUrlController.text =
-                                    campsite.imageUrl ?? '';
-
-                                editedId = campsite.id;
-                                showAddForm = true;
-                                isEditing = true;
-                                setState(() {});
-                              },
-                              padding: const EdgeInsets.all(8),
-                              constraints: const BoxConstraints(),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFEE2E2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.delete_outline,
-                                size: 16,
-                                color: Color(0xFFDC2626),
-                              ),
-                              onPressed: () async {
-                                final confirm = await showDialog<bool>(
-                                  context: context,
-                                  builder: (_) => AlertDialog(
-                                    title: const Text('Delete Campsite'),
-                                    content: const Text('Are you sure?'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, false),
-                                        child: const Text('Cancel'),
-                                      ),
-                                      ElevatedButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, true),
-                                        child: const Text('Delete'),
-                                      ),
-                                    ],
+                          // Name + Status
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  campsite.name,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                );
-
-                                if (confirm == true) {
-                                  await apiService.deleteCampsite(campsite.id);
-                                  _loadCampsites();
-                                  setState(() {});
-                                }
-                              },
-                              padding: const EdgeInsets.all(8),
-                              constraints: const BoxConstraints(),
-                            ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isActive
+                                      ? const Color(0xFFDCFCE7)
+                                      : const Color(0xFFF3F4F6),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  isActive ? 'Active' : 'Inactive',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: isActive
+                                        ? const Color(0xFF16A34A)
+                                        : const Color(0xFF6B7280),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
+
+                          const SizedBox(height: 4),
+
+                          // Location
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.location_on_outlined,
+                                size: 14,
+                                color: Color(0xFF6B7280),
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  campsite.locationName,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF6B7280),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          // Rating (static / optional)
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.star,
+                                size: 14,
+                                color: Color(0xFFFBBF24),
+                              ),
+                              const SizedBox(width: 4),
+                              const Text('4.5', style: TextStyle(fontSize: 14)),
+                              const SizedBox(width: 4),
+                              const Text(
+                                '(120)',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF6B7280),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Capacity: ${campsite.capacity}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF6B7280),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Price + Actions
                         ],
                       ),
-                    ],
-                  ),
-                  ElevatedButton(
-                    child: const Text('Detail'),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => CampsiteDetailsPage(
-                            campsite: campsite,
-                            onBookNow: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Booking feature coming soon'),
-                                ),
-                              );
-                            },
-                            onViewWeather: () {
-                              // This will be handled inside detail page
-                            },
-                          ),
-                        ),
-                      );
-                    },
+                    ),
                   ),
                 ],
               ),
-            ),
-          ],
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    campsite.formattedPrice,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF16A34A),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.visibility,
+                            size: 16,
+                            color: Color(0xFF16A34A),
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => CampsiteDetailsPage(
+                                  campsite: campsite,
+                                  onBookNow: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Booking feature coming soon',
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  onViewWeather: () {
+                                    // This will be handled inside detail page
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                          padding: const EdgeInsets.all(8),
+                          constraints: const BoxConstraints(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.edit,
+                            size: 16,
+                            color: Color(0xFF2563EB),
+                          ),
+                          onPressed: () {
+                            // isi controller dari campsite
+                            nameController.text = campsite.name;
+                            locationController.text = campsite.locationName;
+                            priceController.text = campsite.pricePerNight
+                                .toString();
+                            capacityController.text = campsite.capacity
+                                .toString();
+                            descriptionController.text =
+                                campsite.description ?? '';
+                            imageUrlController.text = campsite.imageUrl ?? '';
+
+                            editedId = campsite.id;
+                            showAddForm = true;
+                            isEditing = true;
+                            setState(() {});
+                          },
+                          padding: const EdgeInsets.all(8),
+                          constraints: const BoxConstraints(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEE2E2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            size: 16,
+                            color: Color(0xFFDC2626),
+                          ),
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                title: const Text('Delete Campsite'),
+                                content: const Text('Are you sure?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: const Text('Delete'),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirm == true) {
+                              await apiService.deleteCampsite(campsite.id);
+                              _loadCampsites();
+                              setState(() {});
+                            }
+                          },
+                          padding: const EdgeInsets.all(8),
+                          constraints: const BoxConstraints(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -451,8 +478,8 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Add New Campsite',
+                    Text(
+                      isEditing ? 'Edit Campsite' : 'Add New Campsite',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -535,13 +562,13 @@ class _CampsiteManagementScreenState extends State<CampsiteManagementScreen> {
                             ),
                           ],
                         ),
-                        // const SizedBox(height: 16),
-                        // _buildTextField(
-                        //   controller: facilitiesController,
-                        //   label: 'Description',
-                        //   hint: 'Enter description',
-                        //   maxLines: 4,
-                        // ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: imageUrlController,
+                          label: 'Image URL',
+                          hint: 'https://example.com/image.jpg',
+                          keyboardType: TextInputType.url,
+                        ),
                         const SizedBox(height: 16),
                         _buildTextField(
                           controller: descriptionController,
