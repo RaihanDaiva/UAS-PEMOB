@@ -36,25 +36,41 @@ class _MyBookingsState extends State<MyBookings> {
     }
   }
 
+  // Filter: Upcoming - status 'pending' OR 'confirmed'
   List<Map<String, dynamic>> get upcomingBookings {
     return bookings.where((b) {
-      final status = b['status'];
+      final status = b['booking_status'];
       return status == 'confirmed' || status == 'pending';
     }).toList();
   }
 
+  // Filter: Past - status 'completed' ONLY
   List<Map<String, dynamic>> get pastBookings {
     return bookings.where((b) {
-      final status = b['status'];
-      return status == 'completed' || status == 'cancelled';
+      final status = b['booking_status'];
+      return status == 'completed';
+    }).toList();
+  }
+
+  // Filter: Cancelled - status 'cancelled' ONLY
+  List<Map<String, dynamic>> get cancelledBookings {
+    return bookings.where((b) {
+      final status = b['booking_status'];
+      return status == 'cancelled';
     }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final displayBookings = activeTab == 'upcoming'
-        ? upcomingBookings
-        : pastBookings;
+    // Display bookings based on active tab
+    List<Map<String, dynamic>> displayBookings;
+    if (activeTab == 'upcoming') {
+      displayBookings = upcomingBookings;
+    } else if (activeTab == 'past') {
+      displayBookings = pastBookings;
+    } else {
+      displayBookings = cancelledBookings;
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
@@ -95,7 +111,7 @@ class _MyBookingsState extends State<MyBookings> {
             ),
           ),
 
-          // Tabs
+          // Tabs - NOW 3 TABS
           Padding(
             padding: const EdgeInsets.all(24),
             child: Container(
@@ -108,6 +124,7 @@ class _MyBookingsState extends State<MyBookings> {
                 children: [
                   Expanded(child: _buildTabButton('Upcoming', 'upcoming')),
                   Expanded(child: _buildTabButton('Past', 'past')),
+                  Expanded(child: _buildTabButton('Cancelled', 'cancelled')),
                 ],
               ),
             ),
@@ -172,7 +189,7 @@ class _MyBookingsState extends State<MyBookings> {
 
   Widget _buildBookingCard(Map<String, dynamic> booking) {
     final campsite = booking['campsite'] ?? {};
-    final status = booking['status'] ?? 'pending';
+    final status = booking['booking_status'] ?? 'pending';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -242,22 +259,23 @@ class _MyBookingsState extends State<MyBookings> {
                           _buildStatusBadge(status),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
                           const Icon(
                             Icons.location_on_outlined,
                             size: 14,
-                            color: Color(0xFF6B7280),
+                            color: Color(0xFF9CA3AF),
                           ),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              campsite['location'] ?? 'Unknown Location',
+                              campsite['location'] ?? '-',
                               style: const TextStyle(
-                                fontSize: 14,
+                                fontSize: 12,
                                 color: Color(0xFF6B7280),
                               ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -269,17 +287,13 @@ class _MyBookingsState extends State<MyBookings> {
             ),
           ),
 
-          // Details Section
-          Container(
+          const Divider(height: 1),
+
+          // Booking Details
+          Padding(
             padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF9FAFB),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
-              ),
-            ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
@@ -346,7 +360,7 @@ class _MyBookingsState extends State<MyBookings> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '${booking['number_of_tents'] ?? 0} Tents • ${booking['number_of_guests'] ?? 0} Guests',
+                      '${booking['num_tents'] ?? booking['number_of_tents'] ?? 0} Tents • ${booking['num_people'] ?? booking['number_of_guests'] ?? 0} Guests',
                       style: const TextStyle(
                         fontSize: 14,
                         color: Color(0xFF6B7280),
@@ -389,12 +403,12 @@ class _MyBookingsState extends State<MyBookings> {
         bgColor = const Color(0xFFFEF3C7);
         textColor = const Color(0xFFD97706);
         borderColor = const Color(0xFFFCD34D);
-        label = 'Pending Payment';
+        label = 'Pending';
         break;
       case 'completed':
-        bgColor = const Color(0xFFF3F4F6);
-        textColor = const Color(0xFF6B7280);
-        borderColor = const Color(0xFFD1D5DB);
+        bgColor = const Color(0xFFE0E7FF);
+        textColor = const Color(0xFF4F46E5);
+        borderColor = const Color(0xFFC7D2FE);
         label = 'Completed';
         break;
       case 'cancelled':
@@ -433,8 +447,14 @@ class _MyBookingsState extends State<MyBookings> {
 
     switch (status) {
       case 'confirmed':
+      case 'pending':
         button = ElevatedButton(
-          onPressed: () {},
+          onPressed: () {
+            // TODO: Navigate to booking detail
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('View Details - Coming soon')),
+            );
+          },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF10B981),
             foregroundColor: Colors.white,
@@ -447,24 +467,14 @@ class _MyBookingsState extends State<MyBookings> {
           child: const Text('View Details', style: TextStyle(fontSize: 14)),
         );
         break;
-      case 'pending':
-        button = ElevatedButton(
-          onPressed: () {},
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFF59E0B),
-            foregroundColor: Colors.white,
-            minimumSize: const Size(double.infinity, 40),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            elevation: 0,
-          ),
-          child: const Text('Complete Payment', style: TextStyle(fontSize: 14)),
-        );
-        break;
       case 'completed':
         button = ElevatedButton(
-          onPressed: () {},
+          onPressed: () {
+            // TODO: Navigate to review page
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Write Review - Coming soon')),
+            );
+          },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF3B82F6),
             foregroundColor: Colors.white,
@@ -477,6 +487,25 @@ class _MyBookingsState extends State<MyBookings> {
           child: const Text('Write Review', style: TextStyle(fontSize: 14)),
         );
         break;
+      case 'cancelled':
+        button = OutlinedButton(
+          onPressed: () {
+            // TODO: Navigate to booking detail
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('View Details - Coming soon')),
+            );
+          },
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFF6B7280),
+            minimumSize: const Size(double.infinity, 40),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            side: const BorderSide(color: Color(0xFFD1D5DB)),
+          ),
+          child: const Text('View Details', style: TextStyle(fontSize: 14)),
+        );
+        break;
       default:
         button = const SizedBox.shrink();
     }
@@ -485,6 +514,20 @@ class _MyBookingsState extends State<MyBookings> {
   }
 
   Widget _buildEmptyState() {
+    String emptyMessage;
+    IconData emptyIcon;
+
+    if (activeTab == 'upcoming') {
+      emptyMessage = 'No upcoming bookings';
+      emptyIcon = Icons.calendar_today_outlined;
+    } else if (activeTab == 'past') {
+      emptyMessage = 'No past bookings';
+      emptyIcon = Icons.history;
+    } else {
+      emptyMessage = 'No cancelled bookings';
+      emptyIcon = Icons.cancel_outlined;
+    }
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -496,15 +539,11 @@ class _MyBookingsState extends State<MyBookings> {
               color: const Color(0xFFF3F4F6),
               borderRadius: BorderRadius.circular(40),
             ),
-            child: const Icon(
-              Icons.calendar_today_outlined,
-              size: 40,
-              color: Color(0xFF9CA3AF),
-            ),
+            child: Icon(emptyIcon, size: 40, color: const Color(0xFF9CA3AF)),
           ),
           const SizedBox(height: 16),
           Text(
-            'No $activeTab bookings',
+            emptyMessage,
             style: const TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
           ),
         ],

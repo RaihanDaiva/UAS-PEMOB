@@ -27,6 +27,30 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
     'completed',
   ];
 
+  // Statusses:
+  // pending: menunggu approval admin, check_out_date masih di masa depan
+  // confirmed: sudah di-approve admin, check_out_date masih di masa depan
+  // cancelled: dibatalkan oleh user atau admin (selagi statusnya hanya dan hanya pending/confirmed)
+  // completed: booking sudah selesai, check_out_date sudah lewat (selagi statusnya hanya dan hanya confirmed)
+
+  // Filters:
+  // upcoming: booking yang belum selesai dan tidak dibatalkan (status == pending || status == confirmed)
+  // past: booking yang sudah selesai (status == completed)
+  // cancelled: booking yang dibatalkan (status == cancelled)
+
+  // Suggestion for upcoming logics:
+  // Status pending: harusnya pacuannya adalah check_in_date masih di masa depan
+  // Status confirmed: harusnya pacuannya adalah check_in_date masih di masa depan
+  // + Status ongoing: user sudah check-in, belum check-out. check_in_date ada di masa lampau dan check_out_date masih di masa depan (sedang berlangsung)
+  // + Filter ongoing: menampilkan booking yang sedang berlangsung (status == ongoing)
+  // Filter upcoming: menampilkan booking yang belum mulai atau sedang berlangsung (status == pending || status == confirmed)
+
+  // Notes for upcoming logics:
+  // Status cancelled sudah pasti benar begitu
+  // Status completed sudah pasti benar begitu
+  // Filter cancelled sudah pasti benar begitu
+  // Filter past sudah pasti benar begitu
+
   @override
   void initState() {
     super.initState();

@@ -5,9 +5,9 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from flask_cors import CORS
+from datetime import datetime, date, timedelta
 import bcrypt
 import requests
-from datetime import datetime, timedelta
 import os
 
 # Initialize Flask app
@@ -25,6 +25,25 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=7)
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
 CORS(app)
+
+# ============================================
+# HELPER FUNCTIONS
+# ============================================
+
+def auto_complete_expired_bookings():
+    """Auto-complete bookings yang checkout_date sudah lewat"""
+    try:
+        today = date.today()
+        
+        Booking.query.filter(
+            Booking.booking_status == 'confirmed',
+            Booking.check_out_date < today
+        ).update({'booking_status': 'completed'})
+        
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Auto-complete error: {e}")
 
 # ============================================
 # DATABASE MODELS
@@ -749,6 +768,9 @@ def create_booking():
 @jwt_required() # Authentication or login required
 def get_my_bookings():
     try:
+        # AUTO-COMPLETE EXPIRED BOOKINGS
+        auto_complete_expired_bookings()
+
         # Read identity from JWT
         user_id = get_jwt_identity()
         
@@ -894,13 +916,15 @@ def get_booking_detail(booking_id):
         }
     }), 200
 
+# 4.7 Update booking status (admin only) [by booking_id]
 @app.route('/api/admin/bookings/<int:booking_id>/status', methods=['PUT'])
-@jwt_required()
+@jwt_required() # Admin authentication required
 def update_booking_status(booking_id):
     try:
+        # Read identity from JWT
         claims = get_jwt()
 
-        # Hanya admin
+        # Admin check
         if claims.get('role') != 'admin':
             return jsonify({
                 'success': False,
