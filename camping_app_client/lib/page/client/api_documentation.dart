@@ -203,6 +203,13 @@ class ApiDocumentation extends StatelessWidget {
                         requiresAuth: true,
                         queryParams: 'campsite_id=1&days=8',
                       ),
+                      ApiEndpoint(
+                        method: 'GET',
+                        path: 'https://api.open-meteo.com/v1/forecast',
+                        description: 'Public API used to Get weather forecast',
+                        requiresAuth: true,
+                        queryParams: 'campsite_id=1&days=8',
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
