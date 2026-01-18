@@ -75,17 +75,64 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
     }
   }
 
+  // ============================================
+  // HELPER: Get Allowed Status Transitions
+  // ============================================
+  List<String> _getAllowedTransitions(String currentStatus) {
+    switch (currentStatus) {
+      case 'pending':
+        return ['pending', 'confirmed', 'cancelled'];
+      case 'confirmed':
+        return ['confirmed', 'cancelled', 'completed'];
+      case 'cancelled':
+        return ['cancelled']; // Tidak bisa diubah
+      case 'completed':
+        return ['completed']; // Tidak bisa diubah
+      default:
+        return ['pending']; // Fallback
+    }
+  }
+
   // --- FUNGSI UPDATE STATUS ---
   Future<void> _showUpdateStatusDialog(
     int bookingId,
     String currentStatus,
   ) async {
+    // FILTER status yang diizinkan berdasarkan current status
+    List<String> allowedTransitions = [];
+
+    switch (currentStatus) {
+      case 'pending':
+        allowedTransitions = ['confirmed', 'cancelled'];
+        break;
+      case 'confirmed':
+        allowedTransitions = ['cancelled', 'completed'];
+        break;
+      case 'cancelled':
+      case 'completed':
+        allowedTransitions = [];
+        break;
+      default:
+        allowedTransitions = [];
+    }
+
+    // Jika tidak ada transisi yang diizinkan
+    if (allowedTransitions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Status $currentStatus cannot be changed'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     String? selectedStatus = await showDialog<String>(
       context: context,
       builder: (BuildContext context) {
         return SimpleDialog(
           title: const Text('Update Booking Status'),
-          children: _allowedStatuses.map((status) {
+          children: allowedTransitions.map((status) {
             return SimpleDialogOption(
               onPressed: () {
                 Navigator.pop(context, status);
@@ -94,16 +141,12 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: Row(
                   children: [
-                    Icon(
-                      status == currentStatus
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
-                      color: status == currentStatus
-                          ? const Color(0xFF2563EB)
-                          : Colors.grey,
+                    const Icon(
+                      Icons.radio_button_unchecked,
+                      color: Color(0xFF2563EB),
                     ),
                     const SizedBox(width: 12),
-                    _buildStatusBadge(status), // Preview badge
+                    _buildStatusBadge(status),
                   ],
                 ),
               ),
@@ -113,10 +156,8 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
       },
     );
 
-    if (selectedStatus != null && selectedStatus != currentStatus) {
-      // Panggil API
+    if (selectedStatus != null) {
       try {
-        // Tampilkan loading indicator sementara
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Updating status...')));
@@ -133,7 +174,6 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
               backgroundColor: Colors.green,
             ),
           );
-          // Refresh list
           _fetchBookings();
         }
       } catch (e) {
@@ -226,7 +266,7 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
 
           const SizedBox(height: 16),
 
-          // Filter Tabs (Bisa di-uncomment jika ingin digunakan)
+          // Filter Tabs
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
             child: SingleChildScrollView(
@@ -239,9 +279,9 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
                   const SizedBox(width: 8),
                   _buildFilterChip('Confirmed', 'confirmed'),
                   const SizedBox(width: 8),
-                  _buildFilterChip('Checked In', 'checked_in'),
-                  const SizedBox(width: 8),
                   _buildFilterChip('Cancelled', 'cancelled'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Completed', 'completed'),
                 ],
               ),
             ),
@@ -348,86 +388,94 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value:
-                              _allowedStatuses.contains(
-                                booking['booking_status'],
-                              )
-                              ? booking['booking_status']
-                              : null,
-                          icon: Icon(
-                            Icons.arrow_drop_down,
-                            color: _getStatusTextColor(
-                              booking['booking_status'],
-                            ),
-                            size: 18,
-                          ),
-                          isDense: true,
-                          elevation: 2,
-                          dropdownColor: Colors.white,
-
-                          // 1. BAGIAN INI MENGATUR TAMPILAN SAAT TOMBOL TERTUTUP (TETAP BERWARNA)
-                          selectedItemBuilder: (BuildContext context) {
-                            return _allowedStatuses.map<Widget>((String value) {
-                              return Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  value
-                                      .split('_')
-                                      .map(
-                                        (word) =>
-                                            word[0].toUpperCase() +
-                                            word.substring(1),
-                                      )
-                                      .join(' '),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    // Tetap menggunakan warna dinamis sesuai status
-                                    color: _getStatusTextColor(value),
-                                  ),
-                                ),
-                              );
-                            }).toList();
-                          },
-
-                          // 2. BAGIAN INI MENGATUR TAMPILAN LIST MENU SAAT DIBUKA (WARNA HITAM)
-                          items: _allowedStatuses.map<DropdownMenuItem<String>>((
-                            String value,
-                          ) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(
-                                value
-                                    .split('_')
-                                    .map(
-                                      (word) =>
-                                          word[0].toUpperCase() +
-                                          word.substring(1),
-                                    )
-                                    .join(' '),
-                                style: const TextStyle(
-                                  color: Colors
-                                      .black87, // Warna Hitam saat dropdown dibuka
-                                  fontWeight: FontWeight.normal,
-                                  fontSize: 14,
-                                ),
-                              ),
+                        child: Builder(
+                          builder: (context) {
+                            // Filter status berdasarkan current status
+                            final allowedTransitions = _getAllowedTransitions(
+                              booking['booking_status'] ?? 'pending',
                             );
-                          }).toList(),
 
-                          onChanged: (String? newValue) async {
-                            if (newValue != null &&
-                                newValue != booking['booking_status']) {
-                              await _updateStatusDirectly(
-                                booking['id'],
-                                newValue,
-                              );
-                            }
-                          },
-                        ),
-                      ),
-                    ),
+                            return DropdownButton<String>(
+                              value: booking['booking_status'],
+                              icon: Icon(
+                                Icons.arrow_drop_down,
+                                color: _getStatusTextColor(
+                                  booking['booking_status'],
+                                ),
+                                size: 18,
+                              ),
+                              isDense: true,
+                              elevation: 2,
+                              dropdownColor: Colors.white,
+
+                              // 1. BAGIAN INI MENGATUR TAMPILAN SAAT TOMBOL TERTUTUP (TETAP BERWARNA)
+                              selectedItemBuilder: (BuildContext context) {
+                                return allowedTransitions.map<Widget>((
+                                  String value,
+                                ) {
+                                  return Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      value
+                                          .split('_')
+                                          .map(
+                                            (word) =>
+                                                word[0].toUpperCase() +
+                                                word.substring(1),
+                                          )
+                                          .join(' '),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        // Tetap menggunakan warna dinamis sesuai status
+                                        color: _getStatusTextColor(value),
+                                      ),
+                                    ),
+                                  );
+                                }).toList();
+                              },
+
+                              // 2. BAGIAN INI MENGATUR TAMPILAN LIST MENU SAAT DIBUKA (WARNA HITAM)
+                              items: allowedTransitions
+                                  .map<DropdownMenuItem<String>>((
+                                    String value,
+                                  ) {
+                                    return DropdownMenuItem<String>(
+                                      value: value,
+                                      child: Text(
+                                        value
+                                            .split('_')
+                                            .map(
+                                              (word) =>
+                                                  word[0].toUpperCase() +
+                                                  word.substring(1),
+                                            )
+                                            .join(' '),
+                                        style: const TextStyle(
+                                          color: Colors
+                                              .black87, // Warna Hitam saat dropdown dibuka
+                                          fontWeight: FontWeight.normal,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    );
+                                  })
+                                  .toList(),
+
+                              onChanged: (String? newValue) async {
+                                if (newValue != null &&
+                                    newValue != booking['booking_status']) {
+                                  await _updateStatusDirectly(
+                                    booking['id'],
+                                    newValue,
+                                  );
+                                }
+                              }, // ← TUTUP onChanged
+                            ); // ← TAMBAH INI: TUTUP DropdownButton
+                          }, // ← TAMBAH INI: TUTUP Builder
+                        ), // ← TUTUP DropdownButtonHideUnderline
+                      ), // ← TUTUP Container
+                    ), // ← TUTUP status section
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -664,6 +712,14 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
   List<Map<String, dynamic>> get _filteredBookings {
     var result = List<Map<String, dynamic>>.from(_bookings);
 
+    // FILTER BY STATUS
+    if (filterStatus != 'all') {
+      result = result.where((b) {
+        return b['booking_status'] == filterStatus;
+      }).toList();
+    }
+
+    // FILTER BY SEARCH QUERY
     if (searchQuery.isNotEmpty) {
       final q = searchQuery.toLowerCase();
       result = result.where((b) {
