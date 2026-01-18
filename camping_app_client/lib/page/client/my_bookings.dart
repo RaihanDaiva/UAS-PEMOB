@@ -188,8 +188,12 @@ class _MyBookingsState extends State<MyBookings> {
   }
 
   Widget _buildBookingCard(Map<String, dynamic> booking) {
-    final campsite = booking['campsite'] ?? {};
     final status = booking['booking_status'] ?? 'pending';
+
+    // Get campsite data from flat structure
+    final campsiteName = booking['campsite_name'] ?? 'Unknown Campsite';
+    final campsiteLocation = booking['campsite_location'] ?? '-';
+    final campsiteImage = booking['campsite_image_url'] ?? '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -213,11 +217,9 @@ class _MyBookingsState extends State<MyBookings> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child:
-                      campsite['image_url'] != null &&
-                          campsite['image_url'] != ''
+                  child: campsiteImage != null && campsiteImage != ''
                       ? Image.network(
-                          campsite['image_url'],
+                          campsiteImage,
                           width: 96,
                           height: 96,
                           fit: BoxFit.cover,
@@ -248,7 +250,7 @@ class _MyBookingsState extends State<MyBookings> {
                         children: [
                           Expanded(
                             child: Text(
-                              campsite['name'] ?? 'Unknown Campsite',
+                              campsiteName ?? 'Unknown Campsite',
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -270,7 +272,7 @@ class _MyBookingsState extends State<MyBookings> {
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              campsite['location'] ?? '-',
+                              campsiteLocation ?? '-',
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: Color(0xFF6B7280),

@@ -30,6 +30,7 @@ CORS(app)
 # HELPER FUNCTIONS
 # ============================================
 
+# Auto-complete expired bookings (Booking checkout_date passed)
 def auto_complete_expired_bookings():
     """Auto-complete bookings yang checkout_date sudah lewat"""
     try:
@@ -782,6 +783,8 @@ def get_my_bookings():
         for booking in bookings:
             booking_dict = booking.to_dict()
             booking_dict['campsite_name'] = booking.campsite.name
+            booking_dict['campsite_location'] = booking.campsite.location_name
+            booking_dict['campsite_image_url'] = booking.campsite.image_url
             result.append(booking_dict)
         
         return jsonify({
