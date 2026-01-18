@@ -14,7 +14,7 @@ import os
 app = Flask(__name__)
 
 # Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:raihan123@localhost/camping_booking_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/camping_booking_db'
 # Struktur: 'mysql+pymysql://{username}:{password}@{host}/{database_name}'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -943,16 +943,24 @@ def update_booking_status(booking_id):
 
         data = request.get_json()
         new_status = data.get('booking_status')
+        current_status = booking.booking_status
 
-        # Validasi status
-        allowed_status = ['pending', 'confirmed','cancelled', 'completed']
-        if new_status not in allowed_status:
+        # TRANSITION RULES VALIDATION
+        allowed_transitions = {
+            'pending': ['confirmed', 'cancelled'],
+            'confirmed': ['cancelled', 'completed'],
+            'cancelled': [],  # Cannot change
+            'completed': []   # Cannot change
+        }
+
+        # Cek apakah transisi diizinkan
+        if new_status not in allowed_transitions.get(current_status, []):
             return jsonify({
                 'success': False,
-                'message': f"Invalid status. Allowed: {', '.join(allowed_status)}"
+                'message': f'Cannot change status from {current_status} to {new_status}'
             }), 400
 
-        # Update
+        # Update status
         booking.booking_status = new_status
         db.session.commit()
 

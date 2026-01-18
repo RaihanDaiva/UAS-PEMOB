@@ -29,7 +29,7 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
 
   // Statusses:
   // pending: menunggu approval admin, check_out_date masih di masa depan
-  // confirmed: sudah di-approve admin, check_out_date masih di masa depan
+  // confirmed: sudah di-approve admin, check_out_date masih di masa depan (selagi statusnya hanya dan hanya pending)
   // cancelled: dibatalkan oleh user atau admin (selagi statusnya hanya dan hanya pending/confirmed)
   // completed: booking sudah selesai, check_out_date sudah lewat (selagi statusnya hanya dan hanya confirmed)
 

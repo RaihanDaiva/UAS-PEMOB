@@ -289,6 +289,28 @@ class _MyBookingsState extends State<MyBookings> {
             ),
           ),
 
+          // BOOKING CODE SECTION - TAMBAH DI SINI
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.confirmation_number_outlined,
+                  size: 14,
+                  color: Color(0xFF9CA3AF),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  booking['booking_code'] ?? '-',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           const Divider(height: 1),
 
           // Booking Details
