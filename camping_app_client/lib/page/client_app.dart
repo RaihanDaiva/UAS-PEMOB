@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import '../models/campsite.dart';
-// import '../../models/campsite.dart';
 import 'client/client_home.dart';
 import 'client/campsite_details.dart';
 import 'client/booking_form.dart';
 import 'client/my_bookings.dart';
 import 'client/client_profile.dart';
 import 'client/weather_forecast.dart';
+import 'client/client_about.dart'; // Uncomment jika file sudah dipisah
 
 enum ClientScreen {
   home,
@@ -15,6 +15,7 @@ enum ClientScreen {
   myBookings,
   profile,
   weatherForecast,
+  about,
 }
 
 class ClientApp extends StatefulWidget {
@@ -45,6 +46,9 @@ class _ClientAppState extends State<ClientApp> {
           break;
         case 2:
           currentScreen = ClientScreen.profile;
+          break;
+        case 3: // Logic untuk About
+          currentScreen = ClientScreen.about;
           break;
       }
     });
@@ -96,7 +100,8 @@ class _ClientAppState extends State<ClientApp> {
   bool _shouldShowBottomNav() {
     return currentScreen == ClientScreen.home ||
         currentScreen == ClientScreen.myBookings ||
-        currentScreen == ClientScreen.profile;
+        currentScreen == ClientScreen.profile ||
+        currentScreen == ClientScreen.about; // Tambahkan About di sini
   }
 
   Widget _renderScreen() {
@@ -128,6 +133,9 @@ class _ClientAppState extends State<ClientApp> {
 
       case ClientScreen.profile:
         return ClientProfile(onBack: _backToHome);
+        
+      case ClientScreen.about: // Tambahkan render screen About
+        return AboutScreen(onBack: _backToHome);
 
       case ClientScreen.weatherForecast:
         return selectedCampsite != null
@@ -187,6 +195,13 @@ class _ClientAppState extends State<ClientApp> {
                           label: 'Profile',
                           index: 2,
                         ),
+                        // Tambahkan item About (Index 3)
+                        _buildBottomNavItem(
+                          icon: Icons.info_outline,
+                          activeIcon: Icons.info,
+                          label: 'About',
+                          index: 3,
+                        ),
                       ],
                     ),
                   ),
@@ -239,3 +254,5 @@ class _ClientAppState extends State<ClientApp> {
     );
   }
 }
+
+// --- DUMMY ABOUT SCREEN (Bisa dipindah ke file client/about_screen.dart) ---

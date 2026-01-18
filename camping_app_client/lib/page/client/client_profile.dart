@@ -379,22 +379,6 @@ class _ClientProfileState extends State<ClientProfile> {
                     ),
                     const SizedBox(height: 12),
                     _buildMenuItem(
-                      Icons.settings_outlined,
-                      'Settings',
-                      const Color(0xFF3B82F6),
-                      const Color(0xFFDBEAFE),
-                      () {},
-                    ),
-                    const SizedBox(height: 12),
-                    _buildMenuItem(
-                      Icons.info,
-                      'About',
-                      const Color(0xFFF59E0B),
-                      const Color(0xFFFEF3C7),
-                      () {},
-                    ),
-                    const SizedBox(height: 12),
-                    _buildMenuItem(
                       Icons.logout,
                       'Logout',
                       const Color(0xFFDC2626),

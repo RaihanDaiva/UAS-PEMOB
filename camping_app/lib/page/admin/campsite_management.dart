@@ -1,6 +1,5 @@
 import 'package:camping_app/page/admin/campsite_details_page.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart'; // Import Image Picker
 import 'package:http/http.dart' as http; // Import http untuk MultipartRequest
 import '../../services/storage_services.dart';
 import '../../models/campsite.dart';

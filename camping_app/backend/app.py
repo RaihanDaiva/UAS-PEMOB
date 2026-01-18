@@ -14,7 +14,7 @@ import os
 app = Flask(__name__)
 
 # Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/camping_booking_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:raihan123@localhost/camping_booking_db'
 # Struktur: 'mysql+pymysql://{username}:{password}@{host}/{database_name}'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
