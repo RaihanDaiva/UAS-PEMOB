@@ -39,11 +39,23 @@ class _LoginScreenState extends State<LoginScreen> {
         passwordController.text,
       );
 
-      apiService.setToken(data['access_token']);
-
+      
+    
+      // Ambil data user & role
       final user = data['user'];
       final role = user['role'];
       final status = user['registration_status'];
+
+      // --- PERBAIKAN DI SINI ---
+      // Cek jika role adalah client, langsung lempar Exception
+      if (role == 'client') {
+        // Text ini akan muncul di SnackBar: "Exception: Invalid email or password"
+        // Anda bisa mengubah pesannya menjadi "client tidak boleh login di sini" jika mau.
+        throw Exception('Invalid email or password'); 
+      }
+      // -------------------------
+
+      apiService.setToken(data['access_token']);
 
       if (status != 'approved') {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -57,9 +69,10 @@ class _LoginScreenState extends State<LoginScreen> {
           context,
           MaterialPageRoute(builder: (_) => const AdminApp()),
         );
-      } 
+      }
       
     } catch (e) {
+      // Blok ini akan menangkap Exception di atas dan menampilkannya
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -79,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
             _logo(),
 
             _card(
-              title: 'Welcome Back',
+              title: 'Welcome Back, Admin',
               children: [
                 _inputField('Email', emailController),
                 const SizedBox(height: 16),

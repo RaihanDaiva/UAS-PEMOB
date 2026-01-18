@@ -5,7 +5,8 @@ import 'package:http/http.dart' as http;
 const String baseUrl =
     // 'http://192.168.1.10:5000'; // Punya Piw
     // 'http://192.168.1.12:5000'; // Punya Raihan
-    'http://192.168.1.7:5000'; // Punya Hasby, Wi-Fi Hasby
+    // 'http://192.168.1.7:5000'; // Punya Hasby, Wi-Fi Hasby
+    'http://192.168.100.6:5000'; // Physical device Raihan Wi-Fi Raihan
 
 class AuthService {
   String? _token;

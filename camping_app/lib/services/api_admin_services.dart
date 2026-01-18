@@ -15,7 +15,9 @@ class ApiService {
   static const String baseUrl =
       // 'http://192.168.1.12:5000/api'; // Physical device
       // 'http://localhost:5000/api'; // iOS Simulator
-      'http://192.168.1.7:5000/api'; // Physical device Hasby Wi-Fi Hasby
+      // 'http://192.168.1.7:5000/api'; // Physical device Hasby Wi-Fi Hasby
+      'http://192.168.100.6:5000/api'; // Physical device Raihan Wi-Fi Raihan
+
 
   String? _token;
 
@@ -353,23 +355,21 @@ class ApiService {
   }
 
   /// Update booking status
-  Future<Map<String, dynamic>> updateBookingStatus(
-    int bookingId,
-    String status, // 'pending', 'confirmed', 'cancelled', 'completed'
-  ) async {
+  Future<bool> updateBookingStatus(int bookingId, String newStatus) async {
     try {
       final url = Uri.parse('$baseUrl/admin/bookings/$bookingId/status');
 
       final response = await http.put(
         url,
         headers: _getHeaders(),
-        body: jsonEncode({'status': status}),
+        // PENTING: Key harus 'booking_status' sesuai backend Python
+        body: jsonEncode({'booking_status': newStatus}),
       );
 
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return data;
+        return true;
       } else {
         throw Exception(data['message'] ?? 'Failed to update booking status');
       }

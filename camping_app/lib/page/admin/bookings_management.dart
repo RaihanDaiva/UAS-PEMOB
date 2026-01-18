@@ -19,6 +19,14 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
   List<Map<String, dynamic>> _bookings = [];
   bool _loading = true;
 
+  // Daftar status yang diizinkan oleh Backend
+  final List<String> _allowedStatuses = [
+    'pending',
+    'confirmed',
+    'cancelled',
+    'completed',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -43,6 +51,79 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
     }
   }
 
+  // --- FUNGSI UPDATE STATUS ---
+  Future<void> _showUpdateStatusDialog(
+    int bookingId,
+    String currentStatus,
+  ) async {
+    String? selectedStatus = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return SimpleDialog(
+          title: const Text('Update Booking Status'),
+          children: _allowedStatuses.map((status) {
+            return SimpleDialogOption(
+              onPressed: () {
+                Navigator.pop(context, status);
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Row(
+                  children: [
+                    Icon(
+                      status == currentStatus
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      color: status == currentStatus
+                          ? const Color(0xFF2563EB)
+                          : Colors.grey,
+                    ),
+                    const SizedBox(width: 12),
+                    _buildStatusBadge(status), // Preview badge
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+
+    if (selectedStatus != null && selectedStatus != currentStatus) {
+      // Panggil API
+      try {
+        // Tampilkan loading indicator sementara
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Updating status...')));
+
+        final success = await apiService.updateBookingStatus(
+          bookingId,
+          selectedStatus,
+        );
+
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Status updated successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // Refresh list
+          _fetchBookings();
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+  // ---------------------------
+
   @override
   Widget build(BuildContext context) {
     final filteredBookings = _filteredBookings;
@@ -51,7 +132,7 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
       backgroundColor: const Color(0xFFF9FAFB),
       body: Column(
         children: [
-          // Header with Search
+          // Header with Search (SAMA SEPERTI KODE ANDA)
           Container(
             color: const Color(0xFF2563EB),
             padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
@@ -119,27 +200,28 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
             ),
           ),
 
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-          // Filter Tabs
-          // Container(
-            
-          //   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          //   child: SingleChildScrollView(
-          //     scrollDirection: Axis.horizontal,
-          //     child: Row(
-          //       children: [
-          //         _buildFilterChip('All', 'all'),
-          //         const SizedBox(width: 8),
-          //         _buildFilterChip('Confirmed', 'confirmed'),
-          //         const SizedBox(width: 8),
-          //         _buildFilterChip('Pending', 'pending'),
-          //         const SizedBox(width: 8),
-          //         _buildFilterChip('Cancelled', 'cancelled'),
-          //       ],
-          //     ),
-          //   ),
-          // ),
+          // Filter Tabs (Bisa di-uncomment jika ingin digunakan)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildFilterChip('All', 'all'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Pending', 'pending'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Confirmed', 'confirmed'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Checked In', 'checked_in'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Cancelled', 'cancelled'),
+                ],
+              ),
+            ),
+          ),
 
           // Bookings List
           Expanded(
@@ -167,7 +249,6 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
         setState(() => filterStatus = value);
         _fetchBookings();
       },
-
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
@@ -212,7 +293,7 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Booking Code: ${booking['booking_code'] ?? '-'}',
+                          '${booking['booking_code'] ?? '-'}',
                           style: const TextStyle(
                             fontSize: 12,
                             color: Color(0xFF6B7280),
@@ -220,7 +301,10 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          booking['campsite_name']?.toString() ?? '-',
+                          _truncateWithEllipsis(
+                            20,
+                            booking['campsite_name']?.toString() ?? '-',
+                          ),
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -228,7 +312,98 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
                         ),
                       ],
                     ),
-                    // _buildStatusBadge(booking['booking_status']),
+                    // --- TOMBOL EDIT STATUS DISINI ---
+                    // --- GANTI BAGIAN DROPDOWN DENGAN INI ---
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: _getStatusBackgroundColor(
+                          booking['booking_status'],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value:
+                              _allowedStatuses.contains(
+                                booking['booking_status'],
+                              )
+                              ? booking['booking_status']
+                              : null,
+                          icon: Icon(
+                            Icons.arrow_drop_down,
+                            color: _getStatusTextColor(
+                              booking['booking_status'],
+                            ),
+                            size: 18,
+                          ),
+                          isDense: true,
+                          elevation: 2,
+                          dropdownColor: Colors.white,
+
+                          // 1. BAGIAN INI MENGATUR TAMPILAN SAAT TOMBOL TERTUTUP (TETAP BERWARNA)
+                          selectedItemBuilder: (BuildContext context) {
+                            return _allowedStatuses.map<Widget>((String value) {
+                              return Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  value
+                                      .split('_')
+                                      .map(
+                                        (word) =>
+                                            word[0].toUpperCase() +
+                                            word.substring(1),
+                                      )
+                                      .join(' '),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    // Tetap menggunakan warna dinamis sesuai status
+                                    color: _getStatusTextColor(value),
+                                  ),
+                                ),
+                              );
+                            }).toList();
+                          },
+
+                          // 2. BAGIAN INI MENGATUR TAMPILAN LIST MENU SAAT DIBUKA (WARNA HITAM)
+                          items: _allowedStatuses.map<DropdownMenuItem<String>>((
+                            String value,
+                          ) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(
+                                value
+                                    .split('_')
+                                    .map(
+                                      (word) =>
+                                          word[0].toUpperCase() +
+                                          word.substring(1),
+                                    )
+                                    .join(' '),
+                                style: const TextStyle(
+                                  color: Colors
+                                      .black87, // Warna Hitam saat dropdown dibuka
+                                  fontWeight: FontWeight.normal,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+
+                          onChanged: (String? newValue) async {
+                            if (newValue != null &&
+                                newValue != booking['booking_status']) {
+                              await _updateStatusDirectly(
+                                booking['id'],
+                                newValue,
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -302,7 +477,6 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
                           ),
                         );
                       },
-
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFEFF6FF),
                         foregroundColor: const Color(0xFF2563EB),
@@ -318,6 +492,12 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
         ],
       ),
     );
+  }
+
+  String _truncateWithEllipsis(int cutoff, String myString) {
+    return (myString.length <= cutoff)
+        ? myString
+        : '${myString.substring(0, cutoff)}...';
   }
 
   Widget _buildInfoRow(IconData icon, String text) {
@@ -346,64 +526,20 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
         textColor = const Color(0xFF16A34A);
         label = 'Confirmed';
         break;
-      case 'pending':
-        bgColor = const Color(0xFFFEF3C7);
-        textColor = const Color(0xFFEAB308);
-        label = 'Pending';
+      case 'completed':
+        bgColor = const Color(0xFFDBEAFE);
+        textColor = const Color(0xFF2563EB);
+        label = 'Completed';
         break;
       case 'cancelled':
         bgColor = const Color(0xFFFEE2E2);
         textColor = const Color(0xFFDC2626);
         label = 'Cancelled';
         break;
-      case 'completed':
-        bgColor = const Color(0xFFF3F4F6);
-        textColor = const Color(0xFF6B7280);
-        label = 'Completed';
-        break;
-      default:
-        bgColor = const Color(0xFFF3F4F6);
-        textColor = const Color(0xFF6B7280);
-        label = status;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: textColor,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPaymentBadge(String status) {
-    Color bgColor;
-    Color textColor;
-    String label;
-
-    switch (status) {
-      case 'paid':
-        bgColor = const Color(0xFFDCFCE7);
-        textColor = const Color(0xFF16A34A);
-        label = 'Paid';
-        break;
       case 'pending':
         bgColor = const Color(0xFFFEF3C7);
         textColor = const Color(0xFFEAB308);
         label = 'Pending';
-        break;
-      case 'refunded':
-        bgColor = const Color(0xFFDBEAFE);
-        textColor = const Color(0xFF2563EB);
-        label = 'Refunded';
         break;
       default:
         bgColor = const Color(0xFFF3F4F6);
@@ -435,13 +571,79 @@ class _BookingsManagementScreenState extends State<BookingsManagementScreen> {
     );
   }
 
+  // Fungsi baru untuk menangani update langsung dari Dropdown
+  Future<void> _updateStatusDirectly(int bookingId, String newStatus) async {
+    try {
+      // Tampilkan loading kecil atau snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Updating status...'),
+          duration: Duration(milliseconds: 500),
+        ),
+      );
+
+      final success = await apiService.updateBookingStatus(
+        bookingId,
+        newStatus,
+      );
+
+      if (success) {
+        // Refresh data setelah sukses
+        _fetchBookings();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Status updated successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  // Helper Warna Background
+  Color _getStatusBackgroundColor(String? status) {
+    switch (status) {
+      case 'pending':
+        return const Color(0xFFFEF3C7);
+      case 'confirmed':
+        return const Color(0xFFDCFCE7);
+      case 'cancelled':
+        return const Color(0xFFFEE2E2);
+      case 'completed':
+        return const Color(0xFFDBEAFE);
+      default:
+        return const Color(0xFFF3F4F6);
+    }
+  }
+
+  // Helper Warna Teks & Icon
+  Color _getStatusTextColor(String? status) {
+    switch (status) {
+      case 'pending':
+        return const Color(0xFFEAB308);
+      case 'confirmed':
+        return const Color(0xFF16A34A);
+      case 'cancelled':
+        return const Color(0xFFDC2626);
+      case 'completed':
+        return const Color(0xFF2563EB);
+      default:
+        return const Color(0xFF6B7280);
+    }
+  }
+
   List<Map<String, dynamic>> get _filteredBookings {
     var result = List<Map<String, dynamic>>.from(_bookings);
 
     if (searchQuery.isNotEmpty) {
       final q = searchQuery.toLowerCase();
       result = result.where((b) {
-        return b['booking_code'].toString().contains(q) ||
+        return b['booking_code'].toString().toLowerCase().contains(q) ||
             b['campsite_name'].toString().toLowerCase().contains(q);
       }).toList();
     }
