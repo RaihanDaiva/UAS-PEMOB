@@ -16,6 +16,8 @@ class ClientProfile extends StatefulWidget {
 class _ClientProfileState extends State<ClientProfile> {
   bool _isLoading = true;
   Map<String, dynamic>? _userData;
+  int totalTrips = 0;
+  int upcomingTrips = 0;
   String _errorMessage = '';
   final AuthService _authService = AuthService();
 
@@ -36,6 +38,8 @@ class _ClientProfileState extends State<ClientProfile> {
       if (data['success'] == true && data['user'] != null) {
         setState(() {
           _userData = data['user'];
+          totalTrips = data['total_trips'] ?? 0;
+          upcomingTrips = data['upcoming_trips'] ?? 0;
           _isLoading = false;
         });
       } else {
@@ -162,6 +166,7 @@ class _ClientProfileState extends State<ClientProfile> {
     final memberSince = _formatDate(user['created_at']);
     final isActive = user['is_active'] == true;
     final status = user['registration_status'] ?? 'unknown';
+    print(_userData!);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
@@ -343,9 +348,9 @@ class _ClientProfileState extends State<ClientProfile> {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Row(
                   children: [
-                    Expanded(child: _buildStatCard('0', 'Total Trips')),
+                    Expanded(child: _buildStatCard(totalTrips.toString(), 'Total Trips')),
                     const SizedBox(width: 12),
-                    Expanded(child: _buildStatCard('0', 'Upcoming')),
+                    Expanded(child: _buildStatCard(upcomingTrips.toString(), 'Upcoming')),
                   ],
                 ),
               ),

@@ -14,7 +14,7 @@ import os
 app = Flask(__name__)
 
 # Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:raihan123@localhost/camping_booking_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/camping_booking_db'
 # Struktur: 'mysql+pymysql://{username}:{password}@{host}/{database_name}'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -240,14 +240,26 @@ def get_profile():
         # Read identity from JWT
         user_id = get_jwt_identity()
         user = User.query.get(user_id)
+        total_trips = Booking.query.filter_by(user_id=user_id, booking_status='completed').count()
+        upcoming_trips = (
+            Booking.query
+            .filter(
+                Booking.user_id == user_id,
+                Booking.booking_status.in_(["pending", "confirmed", "cancelled"])
+            )
+            .count()
+        )
         
         if not user:
             return jsonify({'success': False, 'message': 'User not found'}), 404
         
         return jsonify({
             'success': True,
-            'user': user.to_dict()
+            'user': user.to_dict(),
+            'total_trips': total_trips,
+            'upcoming_trips': upcoming_trips
         }), 200
+        
         
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
