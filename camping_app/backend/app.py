@@ -14,7 +14,7 @@ import os
 app = Flask(__name__)
 
 # Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:raihan123@localhost/camping_booking_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/camping_booking_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = 'mysecret'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=7)
@@ -842,6 +842,50 @@ def get_booking_detail(booking_id):
         }
     }), 200
 
+@app.route('/api/admin/bookings/<int:booking_id>/status', methods=['PUT'])
+@jwt_required()
+def update_booking_status(booking_id):
+    try:
+        claims = get_jwt()
+
+        # Hanya admin
+        if claims.get('role') != 'admin':
+            return jsonify({
+                'success': False,
+                'message': 'Access denied. Admin only.'
+            }), 403
+
+        booking = Booking.query.get(booking_id)
+        if not booking:
+            return jsonify({
+                'success': False,
+                'message': 'Booking not found'
+            }), 404
+
+        data = request.get_json()
+        new_status = data.get('booking_status')
+
+        # Validasi status
+        allowed_status = ['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled']
+        if new_status not in allowed_status:
+            return jsonify({
+                'success': False,
+                'message': f"Invalid status. Allowed: {', '.join(allowed_status)}"
+            }), 400
+
+        # Update
+        booking.booking_status = new_status
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Booking status updated successfully',
+            'booking': booking.to_dict()
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 # ============================================
