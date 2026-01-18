@@ -906,7 +906,7 @@ def update_booking_status(booking_id):
         new_status = data.get('booking_status')
 
         # Validasi status
-        allowed_status = ['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled']
+        allowed_status = ['pending', 'confirmed','cancelled', 'completed']
         if new_status not in allowed_status:
             return jsonify({
                 'success': False,
